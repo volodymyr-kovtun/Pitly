@@ -1,0 +1,25 @@
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
+Trades,Data,Order,Stocks,USD,AAPL,"2024-01-15, 10:30:00",50,185.50,185.50,0,-1.25,9275.00,0,0,O
+Trades,Data,Order,Stocks,USD,MSFT,"2024-02-05, 11:00:00",30,405.20,405.20,0,-1.10,12156.00,0,0,O
+Trades,Data,Order,Stocks,USD,NVDA,"2024-02-20, 14:15:00",20,680.00,680.00,0,-0.95,13600.00,0,0,O
+Trades,Data,Order,Stocks,USD,AAPL,"2024-03-12, 09:45:00",25,172.30,172.30,0,-0.85,4307.50,0,0,O
+Trades,Data,Order,Stocks,USD,AAPL,"2024-04-22, 13:20:00",-40,192.80,192.80,7712.00,-1.50,0,520.00,0,C
+Trades,Data,Order,Stocks,USD,MSFT,"2024-05-10, 10:00:00",-20,420.50,420.50,8410.00,-1.20,0,306.00,0,C
+Trades,Data,Order,Stocks,USD,NVDA,"2024-06-18, 15:30:00",15,125.40,125.40,0,-0.75,1881.00,0,0,O
+Trades,Data,Order,Stocks,USD,NVDA,"2024-08-05, 11:45:00",-25,118.50,118.50,2962.50,-1.00,0,-210.00,0,C
+Trades,Data,Order,Stocks,USD,MSFT,"2024-09-15, 14:00:00",-10,435.75,435.75,4357.50,-1.05,0,305.50,0,C
+Trades,Data,Order,Stocks,USD,AAPL,"2024-11-20, 10:30:00",-35,228.90,228.90,8011.50,-1.30,0,1250.00,0,C
+Trades,SubTotal,,Stocks,USD,,,,,,31453.50,-10.95,,2171.50,,
+Trades,Total,,,,,,,,,,,,,,
+Dividends,Header,Currency,Date,Description,Amount
+Dividends,Data,USD,2024-02-15,AAPL (US0378331005) Cash Dividend USD 0.24 per Share (Ordinary Dividend),12.00
+Dividends,Data,USD,2024-05-15,AAPL (US0378331005) Cash Dividend USD 0.25 per Share (Ordinary Dividend),18.75
+Dividends,Data,USD,2024-03-14,MSFT (US5949181045) Cash Dividend USD 0.75 per Share (Ordinary Dividend),22.50
+Dividends,Data,USD,2024-06-13,MSFT (US5949181045) Cash Dividend USD 0.75 per Share (Ordinary Dividend),22.50
+Dividends,Total,,,Total,75.75
+Withholding Tax,Header,Currency,Date,Description,Amount
+Withholding Tax,Data,USD,2024-02-15,AAPL (US0378331005) Cash Dividend USD 0.24 per Share - US Tax,-1.80
+Withholding Tax,Data,USD,2024-05-15,AAPL (US0378331005) Cash Dividend USD 0.25 per Share - US Tax,-2.81
+Withholding Tax,Data,USD,2024-03-14,MSFT (US5949181045) Cash Dividend USD 0.75 per Share - US Tax,-3.38
+Withholding Tax,Data,USD,2024-06-13,MSFT (US5949181045) Cash Dividend USD 0.75 per Share - US Tax,-3.38
+Withholding Tax,Total,,,Total,-11.37
