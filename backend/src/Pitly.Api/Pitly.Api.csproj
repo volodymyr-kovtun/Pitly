@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Pitly.Core\Pitly.Core.csproj" />
+    <ProjectReference Include="..\Pitly.Broker.InteractiveBrokers\Pitly.Broker.InteractiveBrokers.csproj" />
   </ItemGroup>
 
   <ItemGroup>

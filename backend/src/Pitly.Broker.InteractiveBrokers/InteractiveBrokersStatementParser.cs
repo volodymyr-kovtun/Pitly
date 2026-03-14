@@ -1,27 +1,21 @@
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using Pitly.Core.Models;
+using Pitly.Core.Parsing;
 
-namespace Pitly.Core.Parsing;
+namespace Pitly.Broker.InteractiveBrokers;
 
-public record ParsedStatement(
-    List<Trade> Trades,
-    List<RawDividend> Dividends,
-    List<RawWithholdingTax> WithholdingTaxes);
-
-public record RawDividend(string Symbol, string Currency, DateTime Date, decimal Amount);
-public record RawWithholdingTax(string Symbol, string Currency, DateTime Date, decimal Amount);
-
-public static partial class IbActivityParser
+public partial class InteractiveBrokersStatementParser : IStatementParser
 {
-    public static ParsedStatement Parse(string csvContent)
+    public ParsedStatement Parse(string content)
     {
-        if (string.IsNullOrWhiteSpace(csvContent))
+        if (string.IsNullOrWhiteSpace(content))
         {
-            throw new FormatException("File is empty.");   
+            throw new FormatException("File is empty.");
         }
 
-        var lines = csvContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var trades = new List<Trade>();
         var dividends = new List<RawDividend>();
         var withholdingTaxes = new List<RawWithholdingTax>();
@@ -180,7 +174,7 @@ public static partial class IbActivityParser
     {
         var fields = new List<string>();
         var inQuotes = false;
-        var current = new System.Text.StringBuilder();
+        var current = new StringBuilder();
 
         for (int i = 0; i < line.Length; i++)
         {

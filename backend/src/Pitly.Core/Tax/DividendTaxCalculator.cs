@@ -1,14 +1,18 @@
 using Pitly.Core.Models;
-using Pitly.Core.Parsing;
 using Pitly.Core.Services;
 
 namespace Pitly.Core.Tax;
 
-public class DividendTaxEngine
+public interface IDividendTaxCalculator
+{
+    Task<List<Dividend>> CalculateAsync(List<RawDividend> dividends, List<RawWithholdingTax> withholdingTaxes);
+}
+
+public class DividendTaxCalculator : IDividendTaxCalculator
 {
     private readonly INbpExchangeRateService _rateService;
 
-    public DividendTaxEngine(INbpExchangeRateService rateService)
+    public DividendTaxCalculator(INbpExchangeRateService rateService)
     {
         _rateService = rateService;
     }

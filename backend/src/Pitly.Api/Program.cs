@@ -1,0 +1,56 @@
+using System.Text.Json.Serialization;
+using Pitly.Api.Data;
+using Pitly.Api.Endpoints;
+using Pitly.Api.Services;
+using Pitly.Broker.InteractiveBrokers;
+using Pitly.Core.Parsing;
+using Pitly.Core.Services;
+using Pitly.Core.Tax;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite("Data Source=pitly.db"));
+
+builder.Services.AddHttpClient("Nbp");
+builder.Services.AddScoped<INbpExchangeRateService>(sp =>
+    new NbpExchangeRateService(
+        sp.GetRequiredService<IHttpClientFactory>().CreateClient("Nbp")));
+
+builder.Services.AddScoped<IStatementParser, InteractiveBrokersStatementParser>();
+builder.Services.AddScoped<ICapitalGainsTaxCalculator, CapitalGainsTaxCalculator>();
+builder.Services.AddScoped<IDividendTaxCalculator, DividendTaxCalculator>();
+builder.Services.AddScoped<ITaxCalculator, TaxCalculator>();
+builder.Services.AddScoped<IImportService, ImportService>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
+
+app.UseCors();
+
+app.MapImportEndpoints();
+app.MapSessionEndpoints();
+app.MapExportEndpoints();
+
+app.Run();

@@ -3,11 +3,16 @@ using Pitly.Core.Services;
 
 namespace Pitly.Core.Tax;
 
-public class CapitalGainsTaxEngine
+public interface ICapitalGainsTaxCalculator
+{
+    Task<List<TradeResult>> CalculateAsync(List<Trade> trades);
+}
+
+public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
 {
     private readonly INbpExchangeRateService _rateService;
 
-    public CapitalGainsTaxEngine(INbpExchangeRateService rateService)
+    public CapitalGainsTaxCalculator(INbpExchangeRateService rateService)
     {
         _rateService = rateService;
     }

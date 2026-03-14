@@ -4,11 +4,6 @@ using System.Text.Json;
 
 namespace Pitly.Core.Services;
 
-public interface INbpExchangeRateService
-{
-    Task<decimal> GetRateAsync(string currency, DateTime transactionDate);
-}
-
 public class NbpExchangeRateService : INbpExchangeRateService
 {
     private readonly HttpClient _httpClient;
