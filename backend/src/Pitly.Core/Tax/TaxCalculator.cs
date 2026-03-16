@@ -60,9 +60,13 @@ public class TaxCalculator : ITaxCalculator
     private static int DetermineYear(ParsedStatement statement)
     {
         var allDates = statement.Trades.Select(t => t.DateTime)
-            .Concat(statement.Dividends.Select(d => d.Date));
+            .Concat(statement.Dividends.Select(d => d.Date))
+            .ToList();
 
-        var grouped = allDates.GroupBy(d => d.Year).OrderByDescending(g => g.Count()).FirstOrDefault();
-        return grouped?.Key ?? DateTime.Now.Year;
+        if (allDates.Count == 0)
+            throw new FormatException(
+                "The statement contains no trades or dividends. Please check that the uploaded file is a valid Interactive Brokers Activity Statement.");
+
+        return allDates.GroupBy(d => d.Year).OrderByDescending(g => g.Count()).First().Key;
     }
 }

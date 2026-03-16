@@ -43,6 +43,10 @@ public static class ImportEndpoints
             {
                 return Results.BadRequest(new { error = ex.Message });
             }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
         }).DisableAntiforgery();
     }
 }

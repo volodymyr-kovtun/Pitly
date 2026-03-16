@@ -30,17 +30,7 @@ public class DividendTaxCalculator : IDividendTaxCalculator
 
             var withholdingAmount = matchingTax?.Amount ?? 0;
 
-            decimal rate;
-            bool rateUnavailable = false;
-            try
-            {
-                rate = await _rateService.GetRateAsync(div.Currency, div.Date);
-            }
-            catch
-            {
-                rate = 0;
-                rateUnavailable = true;
-            }
+            var rate = await _rateService.GetRateAsync(div.Currency, div.Date);
 
             var amountPln = div.Amount * rate;
             var withholdingPln = withholdingAmount * rate;
@@ -53,8 +43,7 @@ public class DividendTaxCalculator : IDividendTaxCalculator
                 WithholdingTaxOriginal: withholdingAmount,
                 AmountPln: amountPln,
                 WithholdingTaxPln: withholdingPln,
-                ExchangeRate: rate,
-                RateUnavailable: rateUnavailable));
+                ExchangeRate: rate));
         }
 
         return results;

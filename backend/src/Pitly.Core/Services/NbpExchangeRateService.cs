@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
@@ -7,7 +8,7 @@ namespace Pitly.Core.Services;
 public class NbpExchangeRateService : INbpExchangeRateService
 {
     private readonly HttpClient _httpClient;
-    private readonly Dictionary<string, decimal> _cache = new();
+    private readonly ConcurrentDictionary<string, decimal> _cache = new();
 
     public NbpExchangeRateService(HttpClient httpClient)
     {
@@ -50,7 +51,7 @@ public class NbpExchangeRateService : INbpExchangeRateService
                     .GetProperty("mid")
                     .GetDecimal();
 
-                _cache[cacheKey] = rate;
+                _cache.TryAdd(cacheKey, rate);
                 return rate;
             }
             catch (HttpRequestException) when (attempt < 4)

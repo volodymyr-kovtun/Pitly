@@ -26,17 +26,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
 
         foreach (var trade in sorted)
         {
-            decimal rate;
-            bool rateUnavailable = false;
-            try
-            {
-                rate = await _rateService.GetRateAsync(trade.Currency, trade.DateTime);
-            }
-            catch
-            {
-                rate = 0;
-                rateUnavailable = true;
-            }
+            var rate = await _rateService.GetRateAsync(trade.Currency, trade.DateTime);
 
             if (!buyLots.ContainsKey(trade.Symbol))
                 buyLots[trade.Symbol] = new LinkedList<(decimal, decimal, decimal)>();
@@ -61,8 +51,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
                     ExchangeRate: rate,
                     ProceedsPln: 0,
                     CostPln: totalCostPln,
-                    GainLossPln: 0,
-                    RateUnavailable: rateUnavailable));
+                    GainLossPln: 0));
             }
             else
             {
@@ -72,7 +61,11 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
 
                 decimal totalCostPln = 0;
                 var remainingQty = trade.Quantity;
-                var lots = buyLots[trade.Symbol];
+
+                if (!buyLots.TryGetValue(trade.Symbol, out var lots) || lots.Count == 0)
+                    throw new InvalidOperationException(
+                        $"Cannot sell {trade.Quantity} shares of {trade.Symbol} on {trade.DateTime:yyyy-MM-dd}: no buy lots available. " +
+                        "The statement may be incomplete — ensure all prior buy trades are included.");
 
                 while (remainingQty > 0 && lots.Count > 0)
                 {
@@ -92,6 +85,12 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
                     }
                 }
 
+                if (remainingQty > 0)
+                    throw new InvalidOperationException(
+                        $"Cannot sell {trade.Quantity} shares of {trade.Symbol} on {trade.DateTime:yyyy-MM-dd}: " +
+                        $"only {trade.Quantity - remainingQty} shares available in buy lots. " +
+                        "The statement may be incomplete — ensure all prior buy trades are included.");
+
                 var gainLoss = netProceedsPln - totalCostPln;
 
                 results.Add(new TradeResult(
@@ -106,8 +105,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
                     ExchangeRate: rate,
                     ProceedsPln: netProceedsPln,
                     CostPln: totalCostPln,
-                    GainLossPln: gainLoss,
-                    RateUnavailable: rateUnavailable));
+                    GainLossPln: gainLoss));
             }
         }
 
