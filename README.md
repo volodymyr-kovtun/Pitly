@@ -60,11 +60,19 @@ If you invest through **Interactive Brokers** from Poland, every year by **April
 
 ## Quick start with Docker
 
+If you don't have Docker installed, download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/) for your OS. Make sure it's running before proceeding.
+
 ```bash
 docker-compose up --build
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser. That's it.
+
+When you're done, stop and remove the containers:
+
+```bash
+docker-compose down
+```
 
 ## Manual setup
 
