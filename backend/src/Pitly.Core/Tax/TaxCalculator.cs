@@ -9,7 +9,6 @@ public interface ITaxCalculator
 
 public class TaxCalculator : ITaxCalculator
 {
-    private const decimal TAX_RATE = 0.19m;
     private readonly ICapitalGainsTaxCalculator _capitalGainsCalculator;
     private readonly IDividendTaxCalculator _dividendTaxCalculator;
 
@@ -34,11 +33,11 @@ public class TaxCalculator : ITaxCalculator
         var totalProceedsPln = sellResults.Sum(t => t.ProceedsPln);
         var totalCostPln = sellResults.Sum(t => t.CostPln);
         var capitalGain = totalProceedsPln - totalCostPln;
-        var capitalGainTax = capitalGain > 0 ? Math.Round(capitalGain * TAX_RATE, 2) : 0;
+        var capitalGainTax = capitalGain > 0 ? Math.Round(capitalGain * TaxConstants.TaxRate, 2) : 0;
 
         var totalDividendsPln = dividends.Sum(d => d.AmountPln);
         var totalWithholdingPln = dividends.Sum(d => d.WithholdingTaxPln);
-        var polishDividendTax = Math.Round(totalDividendsPln * TAX_RATE, 2);
+        var polishDividendTax = Math.Round(totalDividendsPln * TaxConstants.TaxRate, 2);
         var withholdingCredit = Math.Min(totalWithholdingPln, polishDividendTax);
         var dividendTaxOwed = Math.Max(polishDividendTax - withholdingCredit, 0);
 

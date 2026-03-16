@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Info } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Info, Search } from 'lucide-react';
 import { formatPln, formatUsd, formatRate, formatDate } from '../format';
 import type { AppState } from '../types';
 import EmptyState from '../components/EmptyState';
@@ -7,15 +7,20 @@ import EmptyState from '../components/EmptyState';
 const PL_TAX_RATE = 0.19;
 
 export default function DividendsPage({ state }: { state: AppState }) {
+  const [symbolFilter, setSymbolFilter] = useState('');
+
   if (!state.sessionId || !state.summary) {
     return <EmptyState />;
   }
 
-  const { dividends } = state;
+  const filtered = useMemo(() => {
+    if (!symbolFilter) return state.dividends;
+    return state.dividends.filter(d => d.symbol.toLowerCase().includes(symbolFilter.toLowerCase()));
+  }, [state.dividends, symbolFilter]);
 
   const totals = useMemo(() => {
     let amountPln = 0, withholdingPln = 0, plTax = 0, netOwed = 0;
-    for (const d of dividends) {
+    for (const d of filtered) {
       const tax = d.amountPln * PL_TAX_RATE;
       amountPln += d.amountPln;
       withholdingPln += d.withholdingTaxPln;
@@ -23,11 +28,25 @@ export default function DividendsPage({ state }: { state: AppState }) {
       netOwed += Math.max(tax - d.withholdingTaxPln, 0);
     }
     return { amountPln, withholdingPln, plTax, netOwed };
-  }, [dividends]);
+  }, [filtered]);
 
   return (
     <div className="space-y-6">
       <h1 className="text-white text-2xl font-bold">Dividends</h1>
+
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <input
+            type="text"
+            placeholder="Filter by symbol..."
+            value={symbolFilter}
+            onChange={(e) => setSymbolFilter(e.target.value)}
+            className="bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+        <span className="text-slate-500 text-sm ml-auto">{filtered.length} dividends</span>
+      </div>
 
       <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
         <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
@@ -53,7 +72,7 @@ export default function DividendsPage({ state }: { state: AppState }) {
               </tr>
             </thead>
             <tbody>
-              {dividends.map((d, i) => {
+              {filtered.map((d, i) => {
                 const plTax = d.amountPln * PL_TAX_RATE;
                 const netOwed = Math.max(plTax - d.withholdingTaxPln, 0);
                 return (

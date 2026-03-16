@@ -70,10 +70,16 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
     {
         // CSV: Trades,Data,DataDiscriminator,AssetCategory,Currency,Symbol,DateTime,Qty,Price,CPrice,Proceeds,Comm,Basis,RealizedPnL,MTM,Code
         // Index: 0     1    2                3             4        5      6        7   8     9      10       11   12    13          14  15
-        if (fields.Count < 16) return;
+        if (fields.Count < 2) return;
 
         var discriminator = Clean(fields[1]);
         if (discriminator != "Data") return;
+
+        if (fields.Count < 16)
+        {
+            _logger.LogWarning("Skipping trade data row: expected at least 16 fields but found {Count}", fields.Count);
+            return;
+        }
 
         var dataDiscriminator = Clean(fields[2]);
         // Real IB exports use "Order" (or "Lot"), sample files may use "Data"
@@ -130,10 +136,16 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
     private (string Symbol, string Currency, DateTime Date, decimal Amount)? TryParseIncomeRow(
         List<string> fields, string sectionName, bool skipReversals)
     {
-        if (fields.Count < 6) return null;
+        if (fields.Count < 2) return null;
 
         var discriminator = Clean(fields[1]);
         if (discriminator != "Data") return null;
+
+        if (fields.Count < 6)
+        {
+            _logger.LogWarning("Skipping {Section} data row: expected at least 6 fields but found {Count}", sectionName, fields.Count);
+            return null;
+        }
 
         var currency = Clean(fields[2]);
         var dateStr = Clean(fields[3]);

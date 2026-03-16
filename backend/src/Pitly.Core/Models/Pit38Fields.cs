@@ -41,8 +41,6 @@ public record Pit38Fields(
     // ── Informational (not a PIT-38 field — shown for user reference) ──
     decimal TotalDividendsPln)
 {
-    private const decimal TaxRate = 0.19m;
-
     public static Pit38Fields FromSummary(TaxSummary summary)
     {
         // Section C — Capital gains
@@ -54,11 +52,11 @@ public record Pit38Fields(
 
         // Section D — Tax calculation
         var podstawa = RoundToFullPln(dochod);
-        var podatek = Math.Round(podstawa * TaxRate, 2);
+        var podatek = Math.Round(podstawa * TaxConstants.TaxRate, 2);
         var podatekNalezny = RoundToFullPln(podatek);
 
         // Section G — Dividends
-        var zryczaltowanyPodatek = Math.Round(summary.TotalDividendsPln * TaxRate, 2);
+        var zryczaltowanyPodatek = Math.Round(summary.TotalDividendsPln * TaxConstants.TaxRate, 2);
         var podatekZaGranica = Math.Round(Math.Min(summary.TotalWithholdingPln, zryczaltowanyPodatek), 2);
         var roznica = RoundToFullPln(Math.Max(zryczaltowanyPodatek - podatekZaGranica, 0));
 
