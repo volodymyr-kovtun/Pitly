@@ -20,6 +20,6 @@ ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
-  CMD curl -sf http://localhost:8080/health || exit 1
+  CMD curl -sf http://localhost:8080/api/health || exit 1
 
 CMD ["dotnet", "Pitly.Api.dll"]

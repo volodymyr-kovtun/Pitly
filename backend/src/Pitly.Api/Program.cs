@@ -50,7 +50,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseCors();
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+app.MapGet("/api/health", () => Results.Ok(new { status = "healthy" }));
 
 app.MapImportEndpoints();
 app.MapSessionEndpoints();
