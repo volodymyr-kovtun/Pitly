@@ -1,0 +1,79 @@
+services:
+  ops-log-init:
+    image: alpine:3.22
+    restart: "no"
+    volumes:
+      - ./ops/logs:/var/log/pitly
+      - ./ops/logging/init-current-logs.sh:/opt/init-current-logs.sh:ro
+    entrypoint:
+      - /bin/sh
+      - /opt/init-current-logs.sh
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      ops-log-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Data Source=/app/data/pitly.db"
+    volumes:
+      - db-data:/app/data
+      - ./ops/logs:/var/log/pitly
+    command:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /var/log/pitly
+        exec dotnet Pitly.Api.dll >> /var/log/pitly/backend.current.txt 2>&1
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+    expose:
+      - "8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+      ops-log-init:
+        condition: service_completed_successfully
+    volumes:
+      - ./ops/logs:/var/log/pitly
+    expose:
+      - "80"
+    networks:
+      default:
+      web:
+        aliases:
+          - pitly-frontend
+
+  ops-log-rotate:
+    image: alpine:3.22
+    restart: unless-stopped
+    environment:
+      LOG_RETENTION_DAYS: ${LOG_RETENTION_DAYS:-14}
+      LOG_ROTATION_CHECK_INTERVAL_SECONDS: ${LOG_ROTATION_CHECK_INTERVAL_SECONDS:-60}
+    volumes:
+      - ./ops/logs:/var/log/pitly
+      - ./ops/logging/rotate-logs.sh:/opt/rotate-logs.sh:ro
+    entrypoint:
+      - /bin/sh
+      - /opt/rotate-logs.sh
+
+networks:
+  default:
+  web:
+    external: true
+
+volumes:
+  db-data:

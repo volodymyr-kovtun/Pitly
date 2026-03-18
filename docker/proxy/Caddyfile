@@ -1,0 +1,24 @@
+{
+    email admin@pitly.xyz
+}
+
+pitly.xyz, www.pitly.xyz {
+    encode zstd gzip
+    header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    reverse_proxy pitly-frontend:80
+}
+
+subero.app, www.subero.app {
+    encode zstd gzip
+    header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    redir /grafana /grafana/ 308
+
+    handle /grafana* {
+        reverse_proxy subero-grafana:3000
+    }
+
+    handle {
+        reverse_proxy subero-frontend:80
+    }
+}

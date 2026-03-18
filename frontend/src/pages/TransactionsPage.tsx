@@ -14,10 +14,6 @@ export default function TransactionsPage({ state }: { state: AppState }) {
   const [page, setPage] = useState(1);
   const pageSize = 25;
 
-  if (!state.sessionId || !state.summary) {
-    return <EmptyState />;
-  }
-
   const filtered = useMemo(() => {
     let data = [...state.trades];
     if (symbolFilter) data = data.filter(t => t.symbol.toLowerCase().includes(symbolFilter.toLowerCase()));
@@ -33,9 +29,6 @@ export default function TransactionsPage({ state }: { state: AppState }) {
     return data;
   }, [state.trades, symbolFilter, typeFilter, sortKey, sortAsc]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-
   const totals = useMemo(() => {
     let proceeds = 0, cost = 0, gainLoss = 0;
     for (const t of filtered) {
@@ -47,12 +40,19 @@ export default function TransactionsPage({ state }: { state: AppState }) {
     return { proceeds, cost, gainLoss };
   }, [filtered]);
 
+  if (!state.sessionId || !state.summary) {
+    return <EmptyState />;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
     else { setSortKey(key); setSortAsc(true); }
   };
 
-  const SortHeader = ({ label, k }: { label: string; k: SortKey }) => (
+  const sortHeader = (label: string, k: SortKey) => (
     <th
       className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 cursor-pointer hover:text-slate-200 select-none"
       onClick={() => toggleSort(k)}
@@ -100,8 +100,8 @@ export default function TransactionsPage({ state }: { state: AppState }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-700">
-                <SortHeader label="Date" k="dateTime" />
-                <SortHeader label="Symbol" k="symbol" />
+                {sortHeader("Date", "dateTime")}
+                {sortHeader("Symbol", "symbol")}
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-left">Type</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Qty</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Price (USD)</th>
@@ -109,7 +109,7 @@ export default function TransactionsPage({ state }: { state: AppState }) {
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Rate</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Proceeds (PLN)</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Cost (PLN)</th>
-                <SortHeader label="Gain/Loss (PLN)" k="gainLossPln" />
+                {sortHeader("Gain/Loss (PLN)", "gainLossPln")}
               </tr>
             </thead>
             <tbody>

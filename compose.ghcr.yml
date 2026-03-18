@@ -1,0 +1,8 @@
+services:
+  backend:
+    image: ghcr.io/${GHCR_REPOSITORY:?set GHCR_REPOSITORY}/backend:${IMAGE_TAG:-production}
+    build: null
+
+  frontend:
+    image: ghcr.io/${GHCR_REPOSITORY:?set GHCR_REPOSITORY}/frontend:${IMAGE_TAG:-production}
+    build: null

@@ -52,11 +52,11 @@ function buildPit38(s: TaxSummary): Pit38Fields {
 }
 
 export default function Pit38Page({ state }: { state: AppState }) {
-  if (!state.sessionId || !state.summary) {
+  const pit38 = useMemo(() => state.summary ? buildPit38(state.summary) : null, [state.summary]);
+
+  if (!state.sessionId || !state.summary || !pit38) {
     return <EmptyState />;
   }
-
-  const pit38 = useMemo(() => buildPit38(state.summary!), [state.summary]);
   const year = pit38.year;
 
   return (

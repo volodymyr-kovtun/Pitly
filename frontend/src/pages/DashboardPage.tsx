@@ -6,12 +6,7 @@ import type { AppState } from '../types';
 import EmptyState from '../components/EmptyState';
 
 export default function DashboardPage({ state }: { state: AppState }) {
-  if (!state.sessionId || !state.summary) {
-    return <EmptyState />;
-  }
-
   const { summary, trades } = state;
-  const totalTaxOwed = summary.capitalGainTaxPln + summary.dividendTaxOwedPln;
 
   const monthlyData = useMemo(() => {
     const months: Record<string, { proceeds: number; costs: number }> = {};
@@ -31,6 +26,12 @@ export default function DashboardPage({ state }: { state: AppState }) {
         Costs: Math.round(data.costs),
       }));
   }, [trades]);
+
+  if (!state.sessionId || !summary) {
+    return <EmptyState />;
+  }
+
+  const totalTaxOwed = summary.capitalGainTaxPln + summary.dividendTaxOwedPln;
 
   const pieData = [
     { name: 'Capital Gains Tax', value: Math.round(summary.capitalGainTaxPln * 100) / 100 },

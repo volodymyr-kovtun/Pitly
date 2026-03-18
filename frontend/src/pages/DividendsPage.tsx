@@ -9,10 +9,6 @@ const PL_TAX_RATE = 0.19;
 export default function DividendsPage({ state }: { state: AppState }) {
   const [symbolFilter, setSymbolFilter] = useState('');
 
-  if (!state.sessionId || !state.summary) {
-    return <EmptyState />;
-  }
-
   const filtered = useMemo(() => {
     if (!symbolFilter) return state.dividends;
     return state.dividends.filter(d => d.symbol.toLowerCase().includes(symbolFilter.toLowerCase()));
@@ -29,6 +25,10 @@ export default function DividendsPage({ state }: { state: AppState }) {
     }
     return { amountPln, withholdingPln, plTax, netOwed };
   }, [filtered]);
+
+  if (!state.sessionId || !state.summary) {
+    return <EmptyState />;
+  }
 
   return (
     <div className="space-y-6">

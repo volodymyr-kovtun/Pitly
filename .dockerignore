@@ -1,0 +1,15 @@
+.git
+node_modules
+dist
+bin
+obj
+.idea
+.vscode
+.DS_Store
+*.db
+*.db-shm
+*.db-wal
+.env*
+samples
+docs
+ops/logs
