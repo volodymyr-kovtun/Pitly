@@ -1,0 +1,203 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        type: string
+        default: main
+      update_proxy:
+        description: "Update shared Caddy proxy config"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Build backend
+        run: dotnet build backend/src/Pitly.Api/Pitly.Api.csproj --nologo
+
+      - name: Run frontend lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+  build:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    needs: validate
+    outputs:
+      ghcr_repository: ${{ steps.meta.outputs.ghcr_repository }}
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      image_tag_sha: ${{ steps.meta.outputs.image_tag_sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Prepare image metadata
+        id: meta
+        env:
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          repository_lower="$(echo "${REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
+          echo "ghcr_repository=${repository_lower}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=production" >> "$GITHUB_OUTPUT"
+          echo "image_tag_sha=${SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/backend.Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.ghcr_repository }}/backend:${{ steps.meta.outputs.image_tag }}
+            ghcr.io/${{ steps.meta.outputs.ghcr_repository }}/backend:${{ steps.meta.outputs.image_tag_sha }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/frontend.Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.ghcr_repository }}/frontend:${{ steps.meta.outputs.image_tag }}
+            ghcr.io/${{ steps.meta.outputs.ghcr_repository }}/frontend:${{ steps.meta.outputs.image_tag_sha }}
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Sync deploy files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ vars.DEPLOY_PORT || 22 }}
+          fingerprint: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
+          overwrite: true
+          source: compose.production.yml,compose.ghcr.yml,ops/logging/init-current-logs.sh,ops/logging/rotate-logs.sh
+          target: ${{ vars.DEPLOY_PATH }}
+
+      - name: Sync proxy files
+        if: ${{ inputs.update_proxy }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ vars.DEPLOY_PORT || 22 }}
+          fingerprint: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
+          overwrite: true
+          source: docker/proxy/docker-compose.yml,docker/proxy/Caddyfile
+          target: ${{ vars.PROXY_DEPLOY_PATH }}
+          strip_components: 2
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          GHCR_REPOSITORY: ${{ needs.build.outputs.ghcr_repository }}
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          UPDATE_PROXY: ${{ inputs.update_proxy }}
+          PROXY_DEPLOY_PATH: ${{ vars.PROXY_DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ vars.DEPLOY_PORT || 22 }}
+          fingerprint: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
+          timeout: 60s
+          command_timeout: 20m
+          envs: DEPLOY_PATH,GHCR_REPOSITORY,IMAGE_TAG,GHCR_USERNAME,GHCR_TOKEN,UPDATE_PROXY,PROXY_DEPLOY_PATH
+          script: |
+            set -Eeuo pipefail
+
+            mkdir -p "${DEPLOY_PATH}/ops/logs"
+            cd "${DEPLOY_PATH}"
+
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USERNAME}" --password-stdin
+
+            COMPOSE="docker compose --project-name pitly -f compose.production.yml -f compose.ghcr.yml"
+
+            ${COMPOSE} pull backend frontend
+            ${COMPOSE} up -d --no-build
+            ${COMPOSE} ps
+
+            if [ "${UPDATE_PROXY}" = "true" ]; then
+              cd "${PROXY_DEPLOY_PATH}"
+              docker compose --project-name shared-proxy up -d --force-recreate
+            fi
+
+            # Health check
+            for attempt in $(seq 1 20); do
+              if curl -sf http://localhost:80/api/health -H "Host: pitly.xyz" > /dev/null 2>&1; then
+                echo "Health check passed"
+                break
+              fi
+
+              if [ "${attempt}" = "20" ]; then
+                echo "Health check failed after 20 attempts" >&2
+                cd "${DEPLOY_PATH}"
+                ${COMPOSE} logs backend --tail=50
+                exit 1
+              fi
+
+              sleep 5
+            done
