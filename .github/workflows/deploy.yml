@@ -8,11 +8,6 @@ on:
         required: true
         type: string
         default: main
-      update_proxy:
-        description: "Update shared Caddy proxy config"
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -133,20 +128,6 @@ jobs:
           source: compose.production.yml,compose.ghcr.yml,ops/logging/init-current-logs.sh,ops/logging/rotate-logs.sh
           target: ${{ vars.DEPLOY_PATH }}
 
-      - name: Sync proxy files
-        if: ${{ inputs.update_proxy }}
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-          port: ${{ vars.DEPLOY_PORT || 22 }}
-          fingerprint: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
-          overwrite: true
-          source: docker/proxy/docker-compose.yml,docker/proxy/Caddyfile
-          target: ${{ vars.PROXY_DEPLOY_PATH }}
-          strip_components: 2
-
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.2
         env:
@@ -155,8 +136,6 @@ jobs:
           IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          UPDATE_PROXY: ${{ inputs.update_proxy }}
-          PROXY_DEPLOY_PATH: ${{ vars.PROXY_DEPLOY_PATH }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -165,7 +144,7 @@ jobs:
           fingerprint: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
           timeout: 60s
           command_timeout: 20m
-          envs: DEPLOY_PATH,GHCR_REPOSITORY,IMAGE_TAG,GHCR_USERNAME,GHCR_TOKEN,UPDATE_PROXY,PROXY_DEPLOY_PATH
+          envs: DEPLOY_PATH,GHCR_REPOSITORY,IMAGE_TAG,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -Eeuo pipefail
 
@@ -179,11 +158,6 @@ jobs:
             ${COMPOSE} pull backend frontend
             ${COMPOSE} up -d --no-build
             ${COMPOSE} ps
-
-            if [ "${UPDATE_PROXY}" = "true" ]; then
-              cd "${PROXY_DEPLOY_PATH}"
-              docker compose --project-name shared-proxy up -d --force-recreate
-            fi
 
             # Health check
             for attempt in $(seq 1 20); do
