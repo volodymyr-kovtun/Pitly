@@ -135,6 +135,12 @@ export default function ImportPage({ onComplete }: { onComplete: (data: AppState
               <p>4. Select date range (full tax year) and export as CSV</p>
               <p>5. Upload one or more yearly CSVs together if you need prior-year FIFO history</p>
             </HelpSection>
+            <HelpSection title="How to export from Exante">
+              <p>1. Log in to your Exante Client Area</p>
+              <p>2. Go to <strong className="text-slate-300">Reports &rarr; Transactions</strong></p>
+              <p>3. Select date range and click <strong className="text-slate-300">Export selected &rarr; CSV</strong></p>
+              <p>4. Upload the generated CSV (or TSV) file</p>
+            </HelpSection>
           </div>
         </>
       ) : (

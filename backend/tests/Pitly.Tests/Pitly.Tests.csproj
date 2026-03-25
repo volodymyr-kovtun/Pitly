@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pitly.Broker.Trading212\Pitly.Broker.Trading212.csproj" />
     <ProjectReference Include="..\..\src\Pitly.Broker.InteractiveBrokers\Pitly.Broker.InteractiveBrokers.csproj" />
+    <ProjectReference Include="..\..\src\Pitly.Broker.Exante\Pitly.Broker.Exante.csproj" />
     <ProjectReference Include="..\..\src\Pitly.Core\Pitly.Core.csproj" />
   </ItemGroup>
 

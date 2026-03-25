@@ -1,5 +1,6 @@
 using Pitly.Broker.InteractiveBrokers;
 using Pitly.Broker.Trading212;
+using Pitly.Broker.Exante;
 using Pitly.Core.Models;
 using Pitly.Core.Parsing;
 using static Pitly.Core.Parsing.CsvHelpers;
@@ -10,13 +11,16 @@ public class StatementParserDispatcher : IStatementParser
 {
     private readonly InteractiveBrokersStatementParser _ibParser;
     private readonly Trading212StatementParser _t212Parser;
+    private readonly ExanteStatementParser _exanteParser;
 
     public StatementParserDispatcher(
         InteractiveBrokersStatementParser ibParser,
-        Trading212StatementParser t212Parser)
+        Trading212StatementParser t212Parser,
+        ExanteStatementParser exanteParser)
     {
         _ibParser = ibParser;
         _t212Parser = t212Parser;
+        _exanteParser = exanteParser;
     }
 
     public ParsedStatement Parse(string content)
@@ -41,7 +45,11 @@ public class StatementParserDispatcher : IStatementParser
             firstLine.Contains("Withholding Tax,", StringComparison.Ordinal))
             return _ibParser.Parse(content);
 
+        if (firstLine.Contains("Transaction ID", StringComparison.OrdinalIgnoreCase) && 
+            (firstLine.Contains("Operation Type", StringComparison.OrdinalIgnoreCase) || firstLine.Contains("\t")))
+            return _exanteParser.Parse(content);
+
         throw new FormatException(
-            "Unrecognized file format. Please upload an Interactive Brokers or Trading 212 CSV export.");
+            "Unrecognized file format. Please upload an Interactive Brokers, Trading 212, or Exante CSV export.");
     }
 }

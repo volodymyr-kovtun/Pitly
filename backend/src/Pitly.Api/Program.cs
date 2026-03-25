@@ -4,6 +4,7 @@ using Pitly.Api.Endpoints;
 using Pitly.Api.Services;
 using Pitly.Broker.InteractiveBrokers;
 using Pitly.Broker.Trading212;
+using Pitly.Broker.Exante;
 using Pitly.Core.Parsing;
 using Pitly.Core.Services;
 using Pitly.Core.Tax;
@@ -27,6 +28,7 @@ builder.Services.AddScoped<INbpExchangeRateService>(sp =>
 
 builder.Services.AddScoped<InteractiveBrokersStatementParser>();
 builder.Services.AddScoped<Trading212StatementParser>();
+builder.Services.AddScoped<ExanteStatementParser>();
 builder.Services.AddScoped<IStatementParser, StatementParserDispatcher>();
 builder.Services.AddScoped<ICapitalGainsTaxCalculator, CapitalGainsTaxCalculator>();
 builder.Services.AddScoped<IDividendTaxCalculator, DividendTaxCalculator>();
