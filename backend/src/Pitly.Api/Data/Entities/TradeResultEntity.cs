@@ -17,4 +17,5 @@ public class TradeResultEntity
     public decimal CostPln { get; set; }
     public decimal GainLossPln { get; set; }
     public bool RateUnavailable { get; set; }
+    public bool HasEstimatedCost { get; set; }
 }

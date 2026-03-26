@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
-import { Upload, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertCircle, Gift } from 'lucide-react';
 import { importFiles } from '../api';
+import type { GiftedLotOverride } from '../api';
 import type { AppState } from '../types';
 
 type Step = 'idle' | 'parsing' | 'rates' | 'calculating' | 'done' | 'error';
@@ -32,14 +33,27 @@ function HelpSection({ title, children }: { title: string; children: React.React
   );
 }
 
+type GiftedFormState = {
+  symbol: string;
+  date: string;
+  price: string;
+  currency: string;
+};
+
+function parseSymbolFromError(msg: string): string {
+  const m = msg.match(/Cannot sell [\d.]+ shares of (\S+)/);
+  return m ? m[1] : '';
+}
+
 export default function ImportPage({ onComplete }: { onComplete: (data: AppState) => void }) {
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [giftedForm, setGiftedForm] = useState<GiftedFormState | null>(null);
 
   const [dragOver, setDragOver] = useState(false);
 
-  const processFiles = useCallback(async (files: File[]) => {
+  const processFiles = useCallback(async (files: File[], assumeGiftedShares = false, giftedLotOverride?: GiftedLotOverride) => {
     if (files.length === 0) {
       setError('Please upload at least one CSV file.');
       return;
@@ -63,7 +77,7 @@ export default function ImportPage({ onComplete }: { onComplete: (data: AppState
     const timer2 = setTimeout(() => setStep('calculating'), 1200);
 
     try {
-      const result = await importFiles(allFiles);
+      const result = await importFiles(allFiles, assumeGiftedShares, giftedLotOverride);
       clearTimeout(timer1);
       clearTimeout(timer2);
       setPendingFiles([]);
@@ -80,6 +94,7 @@ export default function ImportPage({ onComplete }: { onComplete: (data: AppState
       clearTimeout(timer1);
       clearTimeout(timer2);
       setPendingFiles(allFiles);
+      setGiftedForm(null);
       setStep('error');
       setError(err instanceof Error ? err.message : 'Import failed');
     }
@@ -122,21 +137,117 @@ export default function ImportPage({ onComplete }: { onComplete: (data: AppState
             <input type="file" accept=".csv" multiple className="hidden" onChange={handleFileInput} />
           </label>
 
-          {error && (
-            <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm space-y-2">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-              {pendingFiles.length > 0 && (
-                <div className="ml-7 text-slate-400">
-                  <span className="text-slate-300">Already queued:</span>{' '}
-                  {pendingFiles.map(f => f.name).join(', ')}
-                  <span className="block mt-1">Upload any additional prior-year files and they will be combined automatically.</span>
+          {error && (() => {
+            const isMissingLotsError = error.includes('Cannot sell');
+            return (
+              <div className="mt-4 space-y-3">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                  {pendingFiles.length > 0 && (
+                    <div className="ml-7 text-slate-400">
+                      <span className="text-slate-300">Already queued:</span>{' '}
+                      {pendingFiles.map(f => f.name).join(', ')}
+                      <span className="block mt-1">Upload any additional prior-year files and they will be combined automatically.</span>
+                    </div>
+                  )}
+                  {isMissingLotsError && pendingFiles.length > 0 && !giftedForm && (
+                    <div className="ml-7 pt-2 border-t border-red-500/20">
+                      <button
+                        onClick={() => setGiftedForm({
+                          symbol: parseSymbolFromError(error),
+                          date: '',
+                          price: '',
+                          currency: 'USD',
+                        })}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition-colors text-sm font-medium"
+                      >
+                        <Gift className="w-4 h-4" />
+                        These shares were gifted — enter grant details
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+
+                {giftedForm && (
+                  <div className="bg-slate-800 border border-amber-500/30 rounded-lg p-5 space-y-4">
+                    <div>
+                      <p className="text-slate-200 text-sm font-medium mb-1">Gifted shares — grant details</p>
+                      <p className="text-slate-400 text-xs">
+                        Under Art.&nbsp;22 ust.&nbsp;1d updof, the cost basis equals the <strong className="text-slate-300">market value on the grant date</strong> — the same value you should have declared as income (przychód z innych źródeł) in the year of receipt.
+                        Using PLN&nbsp;0 instead may result in paying more capital gains tax than legally required.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Symbol</label>
+                        <input
+                          readOnly
+                          value={giftedForm.symbol}
+                          className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-sm text-slate-300 cursor-not-allowed"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Currency</label>
+                        <input
+                          value={giftedForm.currency}
+                          onChange={e => setGiftedForm(f => f && ({ ...f, currency: e.target.value.toUpperCase() }))}
+                          maxLength={3}
+                          className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Grant date</label>
+                        <input
+                          type="date"
+                          value={giftedForm.date}
+                          onChange={e => setGiftedForm(f => f && ({ ...f, date: e.target.value }))}
+                          className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Price per share ({giftedForm.currency})</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="e.g. 79.84"
+                          value={giftedForm.price}
+                          onChange={e => setGiftedForm(f => f && ({ ...f, price: e.target.value }))}
+                          className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-1">
+                      <button
+                        disabled={!giftedForm.date || !giftedForm.price || Number(giftedForm.price) <= 0}
+                        onClick={() => processFiles([], true, {
+                          symbol: giftedForm.symbol,
+                          date: giftedForm.date,
+                          price: Number(giftedForm.price),
+                          currency: giftedForm.currency,
+                        })}
+                        className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Proceed with entered values
+                      </button>
+                      <button
+                        onClick={() => processFiles([], true)}
+                        className="px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 text-slate-400 text-sm hover:text-white transition-colors"
+                        title="PLN 0 cost is not tax-correct — it may result in paying more capital gains tax than legally required"
+                      >
+                        I don't know the price — use PLN&nbsp;0 (may overpay tax)
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="mt-8 space-y-2">
             <HelpSection title="How to export from Interactive Brokers">

@@ -5,7 +5,11 @@ namespace Pitly.Core.Tax;
 
 public interface ICapitalGainsTaxCalculator
 {
-    Task<List<TradeResult>> CalculateAsync(ParsedStatement statement, int targetYear);
+    Task<List<TradeResult>> CalculateAsync(
+        ParsedStatement statement,
+        int targetYear,
+        bool assumeGiftedShares = false,
+        GiftedLotOverride? giftedLotOverride = null);
 }
 
 public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
@@ -17,14 +21,49 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
         _rateService = rateService;
     }
 
-    public async Task<List<TradeResult>> CalculateAsync(ParsedStatement statement, int targetYear)
+    public async Task<List<TradeResult>> CalculateAsync(
+        ParsedStatement statement,
+        int targetYear,
+        bool assumeGiftedShares = false,
+        GiftedLotOverride? giftedLotOverride = null)
     {
         var results = new List<TradeResult>();
-        var buyLots = new Dictionary<string, LinkedList<(decimal Quantity, decimal CostPerSharePln, decimal CommissionPerSharePln)>>();
+        var buyLots = new Dictionary<string, LinkedList<(decimal Quantity, decimal CostPerSharePln, decimal CommissionPerSharePln, bool IsSynthetic)>>();
         var carryInByKey = (statement.CarryInPositions ?? [])
             .Where(p => p.Year == targetYear)
             .GroupBy(GetLotKey, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Sum(p => p.Quantity), StringComparer.OrdinalIgnoreCase);
+
+        // When the user has confirmed these are gifted/bonus shares with no purchase record,
+        // pre-populate the FIFO queue with zero-cost synthetic lots from the earliest carry-in
+        // per symbol. These sit at the front so FIFO consumes them first and the resulting
+        // TradeResult is flagged with HasEstimatedCost = true.
+        if (assumeGiftedShares)
+        {
+            var earliestCarryIns = (statement.CarryInPositions ?? [])
+                .GroupBy(GetLotKey, StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.MinBy(p => p.Year)!)
+                .Where(p => p.Quantity > 0);
+
+            foreach (var carryIn in earliestCarryIns)
+            {
+                var key = GetLotKey(carryIn);
+                if (!buyLots.ContainsKey(key))
+                    buyLots[key] = new LinkedList<(decimal, decimal, decimal, bool)>();
+
+                decimal costPerSharePln = 0m;
+
+                if (giftedLotOverride is not null &&
+                    carryIn.Symbol.Equals(giftedLotOverride.Symbol, StringComparison.OrdinalIgnoreCase))
+                {
+                    var grantRate = await _rateService.GetRateAsync(giftedLotOverride.Currency, giftedLotOverride.GrantDate);
+                    costPerSharePln = giftedLotOverride.PricePerShare * grantRate;
+                }
+
+                buyLots[key].AddFirst((carryIn.Quantity, costPerSharePln, 0m, IsSynthetic: true));
+            }
+        }
+
         var events = statement.Trades
             .Select(trade => new TimelineEvent(trade.DateTime, trade, null))
             .Concat((statement.CorporateActions ?? [])
@@ -46,14 +85,14 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
             var lotKey = GetLotKey(trade);
 
             if (!buyLots.ContainsKey(lotKey))
-                buyLots[lotKey] = new LinkedList<(decimal, decimal, decimal)>();
+                buyLots[lotKey] = new LinkedList<(decimal, decimal, decimal, bool)>();
 
             if (trade.Type == TradeType.Buy)
             {
                 var costPerSharePln = trade.Price * rate;
                 var commissionPln = await GetCommissionPlnAsync(trade, rate);
                 var commissionPerSharePln = commissionPln / trade.Quantity;
-                buyLots[lotKey].AddLast((trade.Quantity, costPerSharePln, commissionPerSharePln));
+                buyLots[lotKey].AddLast((trade.Quantity, costPerSharePln, commissionPerSharePln, IsSynthetic: false));
 
                 var totalCostPln = trade.Quantity * costPerSharePln + commissionPln;
 
@@ -82,6 +121,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
 
                 decimal totalCostPln = 0;
                 var remainingQty = trade.Quantity;
+                var consumedSynthetic = false;
 
                 if (!buyLots.TryGetValue(lotKey, out var lots) || lots.Count == 0)
                     throw new InvalidOperationException(BuildMissingLotsMessage(trade, targetYear, carryInByKey));
@@ -92,6 +132,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
                     var usedQty = Math.Min(remainingQty, lot.Quantity);
 
                     totalCostPln += usedQty * (lot.CostPerSharePln + lot.CommissionPerSharePln);
+                    if (lot.IsSynthetic) consumedSynthetic = true;
                     remainingQty -= usedQty;
 
                     if (usedQty >= lot.Quantity)
@@ -100,7 +141,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
                     }
                     else
                     {
-                        lots.First!.Value = (lot.Quantity - usedQty, lot.CostPerSharePln, lot.CommissionPerSharePln);
+                        lots.First!.Value = (lot.Quantity - usedQty, lot.CostPerSharePln, lot.CommissionPerSharePln, lot.IsSynthetic);
                     }
                 }
 
@@ -127,7 +168,8 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
                         ExchangeRate: rate,
                         ProceedsPln: netProceedsPln,
                         CostPln: totalCostPln,
-                        GainLossPln: gainLoss));
+                        GainLossPln: gainLoss,
+                        HasEstimatedCost: consumedSynthetic));
                 }
             }
         }
@@ -149,7 +191,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
 
     private static void ApplyCorporateAction(
         CorporateAction action,
-        Dictionary<string, LinkedList<(decimal Quantity, decimal CostPerSharePln, decimal CommissionPerSharePln)>> buyLots)
+        Dictionary<string, LinkedList<(decimal Quantity, decimal CostPerSharePln, decimal CommissionPerSharePln, bool IsSynthetic)>> buyLots)
     {
         if (action.Type != CorporateActionType.StockSplit)
             return;
@@ -169,7 +211,8 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
             node.Value = (
                 Quantity: lot.Quantity * factor,
                 CostPerSharePln: lot.CostPerSharePln / factor,
-                CommissionPerSharePln: lot.CommissionPerSharePln / factor);
+                CommissionPerSharePln: lot.CommissionPerSharePln / factor,
+                IsSynthetic: lot.IsSynthetic);
         }
     }
 

@@ -1,4 +1,6 @@
+using System.Globalization;
 using Pitly.Api.Services;
+using Pitly.Core.Models;
 
 namespace Pitly.Api.Endpoints;
 
@@ -15,6 +17,23 @@ public static class ImportEndpoints
             var files = form.Files
                 .Where(f => f.Length > 0)
                 .ToList();
+            var assumeGiftedShares = form.TryGetValue("assumeGiftedShares", out var gifted)
+                && gifted == "true";
+
+            GiftedLotOverride? giftedLotOverride = null;
+            if (assumeGiftedShares
+                && form.TryGetValue("giftedSymbol", out var symVal) && !string.IsNullOrWhiteSpace(symVal)
+                && form.TryGetValue("giftedDate", out var dateVal)
+                && DateTime.TryParseExact(dateVal, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var grantDate)
+                && form.TryGetValue("giftedPrice", out var priceVal)
+                && decimal.TryParse(priceVal, NumberStyles.Any, CultureInfo.InvariantCulture, out var grantPrice)
+                && grantPrice > 0)
+            {
+                var currency = form.TryGetValue("giftedCurrency", out var cur) && !string.IsNullOrWhiteSpace(cur)
+                    ? cur.ToString()
+                    : "USD";
+                giftedLotOverride = new GiftedLotOverride(symVal!, grantDate, grantPrice, currency);
+            }
 
             if (files.Count == 0)
                 return Results.BadRequest(new { error = "No file uploaded" });
@@ -34,7 +53,7 @@ public static class ImportEndpoints
                 var streams = files.Select(file => file.OpenReadStream()).ToList();
                 try
                 {
-                    var result = await importService.ImportStatementsAsync(streams);
+                    var result = await importService.ImportStatementsAsync(streams, assumeGiftedShares, giftedLotOverride);
 
                     return Results.Ok(new
                     {

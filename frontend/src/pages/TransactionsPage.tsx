@@ -154,9 +154,14 @@ export default function TransactionsPage({ state }: { state: AppState }) {
 
 function Row({ trade: t }: { trade: TradeResult }) {
   const isSell = t.type === 'Sell';
+  const hasWarning = t.rateUnavailable || t.hasEstimatedCost;
+  const warningTitle = [
+    t.rateUnavailable ? 'NBP rate unavailable — manual entry required' : '',
+    t.hasEstimatedCost ? 'Cost basis estimated at PLN 0 (shares gifted or predating uploaded statements — verify with a tax advisor)' : '',
+  ].filter(Boolean).join('; ');
   return (
-    <tr className={`border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors ${t.rateUnavailable ? 'bg-amber-500/5' : ''}`}>
-      <td className="px-3 py-2.5 text-slate-300 whitespace-nowrap" title={t.rateUnavailable ? 'Rate unavailable — manual entry required' : undefined}>
+    <tr className={`border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors ${hasWarning ? 'bg-amber-500/5' : ''}`}>
+      <td className="px-3 py-2.5 text-slate-300 whitespace-nowrap" title={hasWarning ? warningTitle : undefined}>
         {formatDate(t.dateTime)}
       </td>
       <td className="px-3 py-2.5 text-white font-medium">{t.symbol}</td>

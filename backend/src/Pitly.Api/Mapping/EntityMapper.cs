@@ -33,7 +33,8 @@ public static class EntityMapper
                 ProceedsPln = t.ProceedsPln,
                 CostPln = t.CostPln,
                 GainLossPln = t.GainLossPln,
-                RateUnavailable = t.RateUnavailable
+                RateUnavailable = t.RateUnavailable,
+                HasEstimatedCost = t.HasEstimatedCost
             }).ToList(),
             Dividends = summary.Dividends.Select(d => new DividendEntity
             {

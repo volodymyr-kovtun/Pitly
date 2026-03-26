@@ -32,3 +32,9 @@ public record CarryInPosition(
     decimal Quantity,
     int Year,
     string? Isin = null);
+
+public record GiftedLotOverride(
+    string Symbol,
+    DateTime GrantDate,
+    decimal PricePerShare,
+    string Currency);

@@ -21,7 +21,10 @@ public class ImportService : IImportService
         _logger = logger;
     }
 
-    public async Task<ImportResult> ImportStatementsAsync(IReadOnlyList<Stream> fileStreams)
+    public async Task<ImportResult> ImportStatementsAsync(
+        IReadOnlyList<Stream> fileStreams,
+        bool assumeGiftedShares = false,
+        GiftedLotOverride? giftedLotOverride = null)
     {
         if (fileStreams.Count == 0)
             throw new FormatException("No files uploaded.");
@@ -49,7 +52,7 @@ public class ImportService : IImportService
         var targetYear = DetermineTargetYear(statements);
         var merged = MergeStatements(statements, targetYear);
 
-        var summary = await _calculator.CalculateAsync(merged, targetYear);
+        var summary = await _calculator.CalculateAsync(merged, targetYear, assumeGiftedShares, giftedLotOverride);
         _logger.LogInformation("Tax calculation complete for year {Year}: capital gain {Gain} PLN, dividend tax owed {DivTax} PLN",
             summary.Year, summary.CapitalGainPln, summary.DividendTaxOwedPln);
 

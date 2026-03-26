@@ -28,4 +28,5 @@ public record TradeResult(
     decimal ProceedsPln,
     decimal CostPln,
     decimal GainLossPln,
-    bool RateUnavailable = false);
+    bool RateUnavailable = false,
+    bool HasEstimatedCost = false);

@@ -13,9 +13,29 @@ export async function importFile(file: File): Promise<ImportResponse> {
   return res.json();
 }
 
-export async function importFiles(files: File[]): Promise<ImportResponse> {
+export interface GiftedLotOverride {
+  symbol: string;
+  date: string;    // yyyy-MM-dd
+  price: number;
+  currency: string;
+}
+
+export async function importFiles(
+  files: File[],
+  assumeGiftedShares = false,
+  giftedLotOverride?: GiftedLotOverride,
+): Promise<ImportResponse> {
   const form = new FormData();
   files.forEach(file => form.append('files', file));
+  if (assumeGiftedShares) {
+    form.append('assumeGiftedShares', 'true');
+    if (giftedLotOverride) {
+      form.append('giftedSymbol', giftedLotOverride.symbol);
+      form.append('giftedDate', giftedLotOverride.date);
+      form.append('giftedPrice', String(giftedLotOverride.price));
+      form.append('giftedCurrency', giftedLotOverride.currency);
+    }
+  }
   const res = await fetch(`${BASE}/import`, { method: 'POST', body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Import failed' }));

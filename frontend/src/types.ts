@@ -13,6 +13,7 @@ export interface TradeResult {
   costPln: number;
   gainLossPln: number;
   rateUnavailable: boolean;
+  hasEstimatedCost: boolean;
 }
 
 export interface DividendResult {

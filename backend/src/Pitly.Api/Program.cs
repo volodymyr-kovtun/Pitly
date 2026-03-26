@@ -50,6 +50,9 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
+    // Add columns introduced after initial schema creation (safe to run on existing DBs)
+    try { db.Database.ExecuteSqlRaw("ALTER TABLE TradeResults ADD COLUMN HasEstimatedCost INTEGER NOT NULL DEFAULT 0"); }
+    catch { /* column already exists */ }
 }
 
 app.UseCors();

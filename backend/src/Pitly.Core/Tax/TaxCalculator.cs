@@ -4,7 +4,11 @@ namespace Pitly.Core.Tax;
 
 public interface ITaxCalculator
 {
-    Task<TaxSummary> CalculateAsync(ParsedStatement statement, int targetYear);
+    Task<TaxSummary> CalculateAsync(
+        ParsedStatement statement,
+        int targetYear,
+        bool assumeGiftedShares = false,
+        GiftedLotOverride? giftedLotOverride = null);
 }
 
 public class TaxCalculator : ITaxCalculator
@@ -20,9 +24,13 @@ public class TaxCalculator : ITaxCalculator
         _dividendTaxCalculator = dividendTaxCalculator;
     }
 
-    public async Task<TaxSummary> CalculateAsync(ParsedStatement statement, int targetYear)
+    public async Task<TaxSummary> CalculateAsync(
+        ParsedStatement statement,
+        int targetYear,
+        bool assumeGiftedShares = false,
+        GiftedLotOverride? giftedLotOverride = null)
     {
-        var tradeResultsTask = _capitalGainsCalculator.CalculateAsync(statement, targetYear);
+        var tradeResultsTask = _capitalGainsCalculator.CalculateAsync(statement, targetYear, assumeGiftedShares, giftedLotOverride);
         var dividendsTask = _dividendTaxCalculator.CalculateAsync(
             statement.Dividends.Where(d => d.Date.Year == targetYear).ToList(),
             statement.WithholdingTaxes.Where(t => t.Date.Year == targetYear).ToList());

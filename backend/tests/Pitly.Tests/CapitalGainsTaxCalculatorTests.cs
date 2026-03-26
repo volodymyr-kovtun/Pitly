@@ -123,52 +123,75 @@ public class CapitalGainsTaxCalculatorTests
         Assert.Equal(90m, sellResult.GainLossPln);
     }
 
+    // Without the flag the calculator should still throw so the user is prompted
+    // to either upload older CSVs or explicitly confirm the shares were gifted.
     [Fact]
-    public async Task CalculateAsync_ExplainsWhenCarryInLotsAreMissing()
+    public async Task CalculateAsync_ThrowsForMissingLotsWhenFlagNotSet()
     {
-        var rateService = new TestRateService(new Dictionary<string, decimal>
-        {
-            ["USD"] = 1m
-        });
+        var rateService = new TestRateService(new Dictionary<string, decimal> { ["USD"] = 1m });
         var calculator = new CapitalGainsTaxCalculator(rateService);
-
-        var statement = new ParsedStatement(
-            Trades:
-            [
-                new(
-                    Symbol: "IBKR",
-                    Currency: "USD",
-                    DateTime: new DateTime(2025, 9, 19, 9, 30, 1),
-                    Quantity: 3.1m,
-                    Price: 65.317741935m,
-                    Proceeds: 202.485m,
-                    Commission: 1.0005828m,
-                    CommissionCurrency: "USD",
-                    RealizedPnL: 139.859614m,
-                    Type: TradeType.Sell,
-                    Isin: "US45841N1072")
-            ],
-            Dividends: [],
-            WithholdingTaxes: [],
-            CorporateActions:
-            [
-                new(
-                    Symbol: "IBKR",
-                    DateTime: new DateTime(2025, 6, 17, 20, 25, 0),
-                    Type: CorporateActionType.StockSplit,
-                    Numerator: 4m,
-                    Denominator: 1m,
-                    Isin: "US45841N1072")
-            ],
-            CarryInPositions:
-            [
-                new("IBKR", 0.8847m, 2025, "US45841N1072")
-            ]);
+        var statement = BuildIbkrGiftStatement(sellQty: 3.1m);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             () => calculator.CalculateAsync(statement, targetYear: 2025));
 
-        Assert.Contains("carried into 2025", ex.Message);
+        Assert.Contains("Cannot sell", ex.Message);
         Assert.Contains("prior-year CSVs", ex.Message);
     }
+
+    // With assumeGiftedShares the calculator creates a PLN 0 synthetic lot and flags the result.
+    [Fact]
+    public async Task CalculateAsync_UsesSyntheticLotWhenGiftedFlagSet()
+    {
+        var rateService = new TestRateService(new Dictionary<string, decimal> { ["USD"] = 1m });
+        var calculator = new CapitalGainsTaxCalculator(rateService);
+        // 0.8847 carry-in × 4 (split) = 3.5388 synthetic shares — enough to cover the 3.1 sell
+        var statement = BuildIbkrGiftStatement(sellQty: 3.1m);
+
+        var results = await calculator.CalculateAsync(statement, targetYear: 2025, assumeGiftedShares: true);
+
+        var sell = Assert.Single(results, r => r.Type == TradeType.Sell);
+        Assert.Equal("IBKR", sell.Symbol);
+        Assert.True(sell.HasEstimatedCost, "Sell that consumed a synthetic lot should be flagged");
+        Assert.Equal(0m, sell.CostPln);
+        Assert.True(sell.GainLossPln > 0);
+    }
+
+    // When the sell exceeds the synthetic lot (carry-in × split factor), it should still throw.
+    [Fact]
+    public async Task CalculateAsync_ThrowsWhenSyntheticLotIsAlsoInsufficient()
+    {
+        var rateService = new TestRateService(new Dictionary<string, decimal> { ["USD"] = 1m });
+        var calculator = new CapitalGainsTaxCalculator(rateService);
+        // 10 > 0.8847 × 4 = 3.5388
+        var statement = BuildIbkrGiftStatement(sellQty: 10m);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => calculator.CalculateAsync(statement, targetYear: 2025, assumeGiftedShares: true));
+
+        Assert.Contains("IBKR", ex.Message);
+    }
+
+    private static ParsedStatement BuildIbkrGiftStatement(decimal sellQty) => new(
+        Trades:
+        [
+            new(Symbol: "IBKR", Currency: "USD",
+                DateTime: new DateTime(2025, 9, 19, 9, 30, 1),
+                Quantity: sellQty, Price: 65.317741935m,
+                Proceeds: sellQty * 65.317741935m, Commission: 1.0m,
+                CommissionCurrency: "USD", RealizedPnL: 0m,
+                Type: TradeType.Sell, Isin: "US45841N1072")
+        ],
+        Dividends: [],
+        WithholdingTaxes: [],
+        CorporateActions:
+        [
+            new(Symbol: "IBKR", DateTime: new DateTime(2025, 6, 17, 20, 25, 0),
+                Type: CorporateActionType.StockSplit,
+                Numerator: 4m, Denominator: 1m, Isin: "US45841N1072")
+        ],
+        CarryInPositions:
+        [
+            new("IBKR", 0.8847m, 2025, "US45841N1072")
+        ]);
 }
