@@ -81,4 +81,45 @@ public class InteractiveBrokersStatementParserTests
         Assert.Single(parsed.Dividends);
         Assert.Empty(parsed.WithholdingTaxes);
     }
+
+    [Fact]
+    public void Parse_GrantActivityParsedAsBuyTrades()
+    {
+        var csv = """
+                  Statement,Data,Period,"January 1, 2022 - December 31, 2022"
+                  Grant Activity,Header,Symbol,Report Date,Description,Award Date,Vesting Date,Quantity,Price,Value
+                  Grant Activity,Data,IBKR,2022-11-03,Stock Award Grant for Cash Deposit,2022-11-03,2023-11-03,0.7367,80.23,59.11
+                  Grant Activity,Data,IBKR,2022-11-04,Stock Award Grant for Cash Deposit,2022-11-04,2023-11-03,0.31,80.67,25.01
+                  Grant Activity,Data,IBKR,2022-12-15,Stock Award Grant for Cash Deposit,2022-12-15,2023-12-15,0.2105,71.27,15
+                  Grant Activity,Data,Total,,,,,1.2572,,99.12
+                  Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Underlying,Listing Exch,Multiplier,Type,Code
+                  Financial Instrument Information,Data,Stocks,IBKR,INTERACTIVE BROKERS GRO-CL A,43645865,US45841N1072,IBKR,NASDAQ,1,COMMON,
+                  Dividends,Header,Currency,Date/Time,Description,Amount
+                  Dividends,Data,USD,2022-12-14,"IBKR(US45841N1072) Payment in Lieu of Dividend (Ordinary Dividend)",0.1
+                  """;
+
+        var parsed = Parser.Parse(csv);
+
+        Assert.Equal(3, parsed.Trades.Count);
+
+        var first = parsed.Trades[0];
+        Assert.Equal("IBKR", first.Symbol);
+        Assert.Equal(TradeType.Buy, first.Type);
+        Assert.Equal(new DateTime(2022, 11, 3), first.DateTime);
+        Assert.Equal(0.7367m, first.Quantity);
+        Assert.Equal(80.23m, first.Price);
+        Assert.Equal(0m, first.Commission);
+        Assert.Equal("USD", first.Currency);
+        Assert.Equal("US45841N1072", first.Isin);
+
+        var second = parsed.Trades[1];
+        Assert.Equal(new DateTime(2022, 11, 4), second.DateTime);
+        Assert.Equal(0.31m, second.Quantity);
+        Assert.Equal(80.67m, second.Price);
+
+        var third = parsed.Trades[2];
+        Assert.Equal(new DateTime(2022, 12, 15), third.DateTime);
+        Assert.Equal(0.2105m, third.Quantity);
+        Assert.Equal(71.27m, third.Price);
+    }
 }

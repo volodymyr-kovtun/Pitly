@@ -29,6 +29,7 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
         var withholdingRows = new List<List<string>>();
         var corporateActionRows = new List<List<string>>();
         var carryInRows = new List<List<string>>();
+        var grantRows = new List<List<string>>();
         var symbolToIsin = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var trades = new List<Trade>();
         var dividends = new List<RawDividend>();
@@ -78,15 +79,21 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
                 case "Mark-to-Market Performance Summary":
                     carryInRows.Add(fields);
                     break;
+                case "Grant Activity":
+                    grantRows.Add(fields);
+                    break;
             }
         }
 
-        if (!hasTrades && !hasDividends && !hasWithholding)
+        if (!hasTrades && !hasDividends && !hasWithholding && grantRows.Count == 0)
             throw new FormatException(
                 "File does not appear to be an IB Activity Statement. Please export in CSV format.");
 
         foreach (var fields in tradeRows)
             TryParseTrade(fields, trades, symbolToIsin);
+
+        foreach (var fields in grantRows)
+            TryParseGrant(fields, trades, symbolToIsin);
 
         foreach (var fields in dividendRows)
             TryParseDividend(fields, dividends);
@@ -187,6 +194,58 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
 
         trades.Add(new Trade(symbol, currency, dateTime, quantity, price, proceeds,
             Math.Abs(commission), currency, realizedPnl, tradeType, isin));
+    }
+
+    private void TryParseGrant(
+        List<string> fields,
+        List<Trade> trades,
+        IReadOnlyDictionary<string, string> symbolToIsin)
+    {
+        // CSV: Grant Activity,Data,Symbol,ReportDate,Description,AwardDate,VestingDate,Quantity,Price,Value
+        // Index: 0             1    2      3          4           5         6           7        8     9
+        if (fields.Count < 2) return;
+
+        var discriminator = Clean(fields[1]);
+        if (discriminator != "Data") return;
+
+        if (fields.Count < 10)
+        {
+            _logger.LogWarning("Skipping grant activity row: expected at least 10 fields but found {Count}", fields.Count);
+            return;
+        }
+
+        var symbol = Clean(fields[2]);
+        if (symbol.Equals("Total", StringComparison.OrdinalIgnoreCase)) return;
+
+        var awardDateStr = Clean(fields[5]);
+        var quantityStr = Clean(fields[7]);
+        var priceStr = Clean(fields[8]);
+        var valueStr = Clean(fields[9]);
+
+        if (!TryParseDate(awardDateStr, out var awardDate))
+        {
+            _logger.LogWarning("Skipping grant activity row for {Symbol}: could not parse award date '{DateStr}'", symbol, awardDateStr);
+            return;
+        }
+        if (!TryParseDecimal(quantityStr, out var quantity) || quantity <= 0)
+        {
+            _logger.LogWarning("Skipping grant activity row for {Symbol}: could not parse quantity '{QuantityStr}'", symbol, quantityStr);
+            return;
+        }
+        if (!TryParseDecimal(priceStr, out var price))
+        {
+            _logger.LogWarning("Skipping grant activity row for {Symbol}: could not parse price '{PriceStr}'", symbol, priceStr);
+            return;
+        }
+        if (!TryParseDecimal(valueStr, out var value))
+        {
+            value = quantity * price;
+        }
+
+        symbolToIsin.TryGetValue(symbol, out var isin);
+
+        trades.Add(new Trade(symbol, "USD", awardDate, quantity, price, value,
+            0, "USD", 0, TradeType.Buy, isin));
     }
 
     private (string Symbol, string? Isin, string Currency, DateTime Date, decimal Amount)? TryParseIncomeRow(
