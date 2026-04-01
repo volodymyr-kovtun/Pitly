@@ -9,5 +9,7 @@ public record TaxSummary(
     decimal TotalWithholdingPln,
     decimal DividendTaxOwedPln,
     int Year,
+    DateTime TaxableFrom,
+    DateTime TaxableTo,
     List<TradeResult> TradeResults,
     List<Dividend> Dividends);

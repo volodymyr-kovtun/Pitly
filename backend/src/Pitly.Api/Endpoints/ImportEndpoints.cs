@@ -1,3 +1,4 @@
+using System.Globalization;
 using Pitly.Api.Services;
 
 namespace Pitly.Api.Endpoints;
@@ -12,6 +13,26 @@ public static class ImportEndpoints
                 return Results.BadRequest(new { error = "Expected multipart/form-data" });
 
             var form = await request.ReadFormAsync();
+            DateTime? residencyStartDate = null;
+            var residencyStartDateRaw = form["residencyStartDate"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(residencyStartDateRaw))
+            {
+                if (!DateTime.TryParseExact(
+                        residencyStartDateRaw,
+                        "yyyy-MM-dd",
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var parsedResidencyStartDate))
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "Residency start date must use YYYY-MM-DD format."
+                    });
+                }
+
+                residencyStartDate = parsedResidencyStartDate.Date;
+            }
+
             var files = form.Files
                 .Where(f => f.Length > 0)
                 .ToList();
@@ -34,7 +55,7 @@ public static class ImportEndpoints
                 var streams = files.Select(file => file.OpenReadStream()).ToList();
                 try
                 {
-                    var result = await importService.ImportStatementsAsync(streams);
+                    var result = await importService.ImportStatementsAsync(streams, residencyStartDate);
 
                     return Results.Ok(new
                     {
@@ -48,7 +69,9 @@ public static class ImportEndpoints
                             result.Summary.TotalDividendsPln,
                             result.Summary.TotalWithholdingPln,
                             result.Summary.DividendTaxOwedPln,
-                            result.Summary.Year
+                            result.Summary.Year,
+                            result.Summary.TaxableFrom,
+                            result.Summary.TaxableTo
                         },
                         trades = result.Summary.TradeResults,
                         dividends = result.Summary.Dividends

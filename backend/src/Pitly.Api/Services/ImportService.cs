@@ -21,7 +21,7 @@ public class ImportService : IImportService
         _logger = logger;
     }
 
-    public async Task<ImportResult> ImportStatementsAsync(IReadOnlyList<Stream> fileStreams)
+    public async Task<ImportResult> ImportStatementsAsync(IReadOnlyList<Stream> fileStreams, DateTime? residencyStartDate = null)
     {
         if (fileStreams.Count == 0)
             throw new FormatException("No files uploaded.");
@@ -46,12 +46,16 @@ public class ImportService : IImportService
                 parsed.CorporateActions?.Count ?? 0);
         }
 
-        var targetYear = DetermineTargetYear(statements);
-        var merged = MergeStatements(statements, targetYear);
+        var taxPeriod = DetermineTaxPeriod(statements, residencyStartDate);
+        var merged = MergeStatements(statements, taxPeriod.Year);
 
-        var summary = await _calculator.CalculateAsync(merged, targetYear);
-        _logger.LogInformation("Tax calculation complete for year {Year}: capital gain {Gain} PLN, dividend tax owed {DivTax} PLN",
-            summary.Year, summary.CapitalGainPln, summary.DividendTaxOwedPln);
+        var summary = await _calculator.CalculateAsync(merged, taxPeriod);
+        _logger.LogInformation(
+            "Tax calculation complete for year {Year} from {TaxableFrom}: capital gain {Gain} PLN, dividend tax owed {DivTax} PLN",
+            summary.Year,
+            summary.TaxableFrom.ToString("yyyy-MM-dd"),
+            summary.CapitalGainPln,
+            summary.DividendTaxOwedPln);
 
         var session = EntityMapper.ToSessionEntity(summary);
         _db.Sessions.Add(session);
@@ -74,6 +78,24 @@ public class ImportService : IImportService
         }
 
         return years.Max();
+    }
+
+    private static TaxPeriod DetermineTaxPeriod(
+        IReadOnlyList<ParsedStatement> statements,
+        DateTime? residencyStartDate)
+    {
+        var targetYear = DetermineTargetYear(statements);
+        if (residencyStartDate is null)
+            return TaxPeriod.FullYear(targetYear);
+
+        var taxableFrom = residencyStartDate.Value.Date;
+        if (taxableFrom.Year != targetYear)
+        {
+            throw new FormatException(
+                $"Residency start date {taxableFrom:yyyy-MM-dd} must fall within the imported tax year {targetYear}.");
+        }
+
+        return new TaxPeriod(targetYear, taxableFrom, new DateTime(targetYear, 12, 31));
     }
 
     private static int GetStatementYear(ParsedStatement statement)

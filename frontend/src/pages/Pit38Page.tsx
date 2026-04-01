@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Printer, FileText, ChevronDown, ChevronUp } from 'lucide-react';
-import { formatPln } from '../format';
+import { formatPln, formatTaxPeriod, hasCustomTaxPeriod } from '../format';
 import type { AppState, Pit38Fields, TaxSummary } from '../types';
 import EmptyState from '../components/EmptyState';
 
@@ -58,6 +58,7 @@ export default function Pit38Page({ state }: { state: AppState }) {
     return <EmptyState />;
   }
   const year = pit38.year;
+  const customTaxPeriod = hasCustomTaxPeriod(state.summary.year, state.summary.taxableFrom);
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -66,6 +67,9 @@ export default function Pit38Page({ state }: { state: AppState }) {
           <h1 className="text-white text-2xl font-bold">Your PIT-38 Declaration for {year}</h1>
           <p className="text-slate-400 mt-1">
             Field numbers (poz.) match the official PIT-38(17) form.
+          </p>
+          <p className="text-slate-500 text-sm mt-1">
+            Taxable period: {formatTaxPeriod(state.summary.taxableFrom, state.summary.taxableTo)}
           </p>
         </div>
         <button
@@ -76,6 +80,13 @@ export default function Pit38Page({ state }: { state: AppState }) {
           Export as PDF
         </button>
       </div>
+
+      {customTaxPeriod && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-200">
+          Earlier uploaded history is still used to reconstruct FIFO costs and stock splits, but this PIT-38 summary
+          includes only dividends and sells from the taxable period above.
+        </div>
+      )}
 
       <Section title="C. Dochody / Straty — art. 30b ust. 1 ustawy">
         <div className="overflow-x-auto">

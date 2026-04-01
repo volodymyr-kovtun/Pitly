@@ -5,7 +5,7 @@ namespace Pitly.Core.Tax;
 
 public interface ICapitalGainsTaxCalculator
 {
-    Task<List<TradeResult>> CalculateAsync(ParsedStatement statement, int targetYear);
+    Task<List<TradeResult>> CalculateAsync(ParsedStatement statement, TaxPeriod taxPeriod);
 }
 
 public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
@@ -17,12 +17,12 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
         _rateService = rateService;
     }
 
-    public async Task<List<TradeResult>> CalculateAsync(ParsedStatement statement, int targetYear)
+    public async Task<List<TradeResult>> CalculateAsync(ParsedStatement statement, TaxPeriod taxPeriod)
     {
         var results = new List<TradeResult>();
         var buyLots = new Dictionary<string, LinkedList<(decimal Quantity, decimal CostPerSharePln, decimal CommissionPerSharePln)>>();
         var carryInByKey = (statement.CarryInPositions ?? [])
-            .Where(p => p.Year == targetYear)
+            .Where(p => p.Year == taxPeriod.Year)
             .GroupBy(GetLotKey, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Sum(p => p.Quantity), StringComparer.OrdinalIgnoreCase);
         var events = statement.Trades
@@ -57,7 +57,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
 
                 var totalCostPln = trade.Quantity * costPerSharePln + commissionPln;
 
-                if (trade.DateTime.Year == targetYear)
+                if (taxPeriod.IncludesTrade(trade.DateTime))
                 {
                     results.Add(new TradeResult(
                         Symbol: trade.Symbol,
@@ -84,7 +84,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
                 var remainingQty = trade.Quantity;
 
                 if (!buyLots.TryGetValue(lotKey, out var lots) || lots.Count == 0)
-                    throw new InvalidOperationException(BuildMissingLotsMessage(trade, targetYear, carryInByKey));
+                    throw new InvalidOperationException(BuildMissingLotsMessage(trade, taxPeriod.Year, carryInByKey));
 
                 while (remainingQty > 0 && lots.Count > 0)
                 {
@@ -108,12 +108,12 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
                     throw new InvalidOperationException(BuildPartialLotsMessage(
                         trade,
                         trade.Quantity - remainingQty,
-                        targetYear,
+                        taxPeriod.Year,
                         carryInByKey));
 
                 var gainLoss = netProceedsPln - totalCostPln;
 
-                if (trade.DateTime.Year == targetYear)
+                if (taxPeriod.IncludesTrade(trade.DateTime))
                 {
                     results.Add(new TradeResult(
                         Symbol: trade.Symbol,

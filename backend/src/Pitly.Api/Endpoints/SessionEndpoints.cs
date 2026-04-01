@@ -69,11 +69,14 @@ public static class SessionEndpoints
             if (session is null)
                 return Results.NotFound(new { error = "Session not found" });
 
+            var taxPeriod = EntityMapper.ToTaxPeriod(session);
             var summary = new TaxSummary(
                 session.TotalProceedsPln, session.TotalCostPln,
                 session.CapitalGainPln, session.CapitalGainTaxPln,
                 session.TotalDividendsPln, session.TotalWithholdingPln,
-                session.DividendTaxOwedPln, session.Year, [], []);
+                session.DividendTaxOwedPln, session.Year,
+                taxPeriod.TaxableFrom, taxPeriod.TaxableTo,
+                [], []);
 
             var pit38 = Pit38Fields.FromSummary(summary);
             return Results.Ok(pit38);

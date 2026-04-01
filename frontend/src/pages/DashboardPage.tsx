@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { TrendingUp, Coins, Landmark, CreditCard } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { formatPln, numColor } from '../format';
+import { formatPln, numColor, formatTaxPeriod, hasCustomTaxPeriod } from '../format';
 import type { AppState } from '../types';
 import EmptyState from '../components/EmptyState';
 
@@ -32,6 +32,7 @@ export default function DashboardPage({ state }: { state: AppState }) {
   }
 
   const totalTaxOwed = summary.capitalGainTaxPln + summary.dividendTaxOwedPln;
+  const customTaxPeriod = hasCustomTaxPeriod(summary.year, summary.taxableFrom);
 
   const pieData = [
     { name: 'Capital Gains Tax', value: Math.round(summary.capitalGainTaxPln * 100) / 100 },
@@ -74,7 +75,17 @@ export default function DashboardPage({ state }: { state: AppState }) {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-white text-2xl font-bold">Dashboard — Tax Year {summary.year}</h1>
+      <div>
+        <h1 className="text-white text-2xl font-bold">Dashboard — Tax Year {summary.year}</h1>
+        <p className="text-slate-400 text-sm mt-1">
+          Taxable period: {formatTaxPeriod(summary.taxableFrom, summary.taxableTo)}
+        </p>
+        {customTaxPeriod && (
+          <p className="text-slate-500 text-sm mt-1">
+            Earlier uploaded trades are still replayed internally to reconstruct FIFO lots and stock splits.
+          </p>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((c) => (

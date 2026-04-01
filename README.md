@@ -104,7 +104,8 @@ npm install && npm run dev
 4. Set the period to the full tax year (e.g. January 1 – December 31, 2024)
 5. Select format: **CSV**
 6. Upload the downloaded file in the app
-7. If you sold shares bought in earlier years, upload those earlier yearly CSVs together so Pitly can reconstruct FIFO lots and stock splits
+7. If you became a Polish tax resident mid-year, still upload the full calendar-year CSV and set your residency start date in the app
+8. If you sold shares bought in earlier years, upload those earlier yearly CSVs together so Pitly can reconstruct FIFO lots and stock splits
 
 ### Trading 212
 
@@ -112,8 +113,9 @@ npm install && npm run dev
 2. Go to **History** (clock icon)
 3. Click the **Download** icon
 4. Select date range (full tax year) and export as CSV
-5. Upload the downloaded file in the app
-6. Upload earlier yearly CSVs together when you need prior-year FIFO history
+5. If you became a Polish tax resident mid-year, still export the full calendar-year CSV and set your residency start date in the app
+6. Upload the downloaded file in the app
+7. Upload earlier yearly CSVs together when you need prior-year FIFO history
 
 A sample IB statement is provided at [`samples/sample-activity-statement.csv`](samples/sample-activity-statement.csv) for testing.
 

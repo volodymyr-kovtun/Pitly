@@ -2,9 +2,15 @@ import type { ImportResponse, TradesPage, DividendResult, TaxSummary } from './t
 
 const BASE = '/api';
 
-export async function importFile(file: File): Promise<ImportResponse> {
+function buildImportForm(files: File[], residencyStartDate?: string): FormData {
   const form = new FormData();
-  form.append('files', file);
+  files.forEach(file => form.append('files', file));
+  if (residencyStartDate) form.append('residencyStartDate', residencyStartDate);
+  return form;
+}
+
+export async function importFile(file: File, residencyStartDate?: string): Promise<ImportResponse> {
+  const form = buildImportForm([file], residencyStartDate);
   const res = await fetch(`${BASE}/import`, { method: 'POST', body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Import failed' }));
@@ -13,9 +19,8 @@ export async function importFile(file: File): Promise<ImportResponse> {
   return res.json();
 }
 
-export async function importFiles(files: File[]): Promise<ImportResponse> {
-  const form = new FormData();
-  files.forEach(file => form.append('files', file));
+export async function importFiles(files: File[], residencyStartDate?: string): Promise<ImportResponse> {
+  const form = buildImportForm(files, residencyStartDate);
   const res = await fetch(`${BASE}/import`, { method: 'POST', body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Import failed' }));

@@ -12,6 +12,7 @@ public static class EntityMapper
             Id = Guid.NewGuid(),
             CreatedAt = DateTime.UtcNow,
             Year = summary.Year,
+            TaxableFrom = summary.TaxableFrom,
             TotalProceedsPln = summary.TotalProceedsPln,
             TotalCostPln = summary.TotalCostPln,
             CapitalGainPln = summary.CapitalGainPln,
@@ -50,8 +51,15 @@ public static class EntityMapper
         };
     }
 
+    public static TaxPeriod ToTaxPeriod(SessionEntity session)
+    {
+        var taxableFrom = session.TaxableFrom?.Date ?? new DateTime(session.Year, 1, 1);
+        return new TaxPeriod(session.Year, taxableFrom, new DateTime(session.Year, 12, 31));
+    }
+
     public static object ToSummaryResponse(SessionEntity session)
     {
+        var taxPeriod = ToTaxPeriod(session);
         return new
         {
             session.TotalProceedsPln,
@@ -61,7 +69,9 @@ public static class EntityMapper
             session.TotalDividendsPln,
             session.TotalWithholdingPln,
             session.DividendTaxOwedPln,
-            session.Year
+            session.Year,
+            taxPeriod.TaxableFrom,
+            taxPeriod.TaxableTo
         };
     }
 }

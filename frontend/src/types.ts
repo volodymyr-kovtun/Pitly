@@ -37,6 +37,8 @@ export interface TaxSummary {
   totalWithholdingPln: number;
   dividendTaxOwedPln: number;
   year: number;
+  taxableFrom: string;
+  taxableTo: string;
 }
 
 export interface Pit38Fields {

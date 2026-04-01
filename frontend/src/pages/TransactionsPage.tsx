@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { ArrowUpDown, Search } from 'lucide-react';
-import { formatPln, formatUsd, formatRate, formatDate, numColor } from '../format';
+import { formatPln, formatUsd, formatRate, formatDate, formatTaxPeriod, hasCustomTaxPeriod, numColor } from '../format';
 import type { AppState, TradeResult } from '../types';
 import EmptyState from '../components/EmptyState';
 
@@ -44,6 +44,7 @@ export default function TransactionsPage({ state }: { state: AppState }) {
     return <EmptyState />;
   }
 
+  const customTaxPeriod = hasCustomTaxPeriod(state.summary.year, state.summary.taxableFrom);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
@@ -66,7 +67,17 @@ export default function TransactionsPage({ state }: { state: AppState }) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-white text-2xl font-bold">Transactions</h1>
+      <div>
+        <h1 className="text-white text-2xl font-bold">Transactions</h1>
+        <p className="text-slate-400 text-sm mt-1">
+          Showing reportable trades for {formatTaxPeriod(state.summary.taxableFrom, state.summary.taxableTo)}.
+        </p>
+        {customTaxPeriod && (
+          <p className="text-slate-500 text-sm mt-1">
+            Earlier uploaded history may still affect FIFO cost basis even when those rows are not shown here.
+          </p>
+        )}
+      </div>
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="relative">
@@ -119,7 +130,7 @@ export default function TransactionsPage({ state }: { state: AppState }) {
             </tbody>
             <tfoot>
               <tr className="border-t border-slate-600 bg-slate-800/80">
-                <td colSpan={7} className="px-3 py-3 text-slate-300 font-medium text-sm">Totals (sells)</td>
+                <td colSpan={7} className="px-3 py-3 text-slate-300 font-medium text-sm">Totals (reportable sells)</td>
                 <td className="px-3 py-3 text-right font-mono tabular-nums text-blue-400 text-sm">{formatPln(totals.proceeds)}</td>
                 <td className="px-3 py-3 text-right font-mono tabular-nums text-blue-400 text-sm">{formatPln(totals.cost)}</td>
                 <td className={`px-3 py-3 text-right font-mono tabular-nums text-sm ${numColor(totals.gainLoss)}`}>{formatPln(totals.gainLoss)}</td>

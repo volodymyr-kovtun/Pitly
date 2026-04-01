@@ -56,7 +56,7 @@ public class CapitalGainsTaxCalculatorTests
 
         var results = await calculator.CalculateAsync(
             new ParsedStatement(trades, [], []),
-            targetYear: 2025);
+            TaxPeriod.FullYear(2025));
         var sellResult = Assert.Single(results, r => r.Type == TradeType.Sell);
 
         Assert.Equal(1500m, sellResult.ProceedsPln);
@@ -114,7 +114,7 @@ public class CapitalGainsTaxCalculatorTests
                     Isin: "US45841N1072")
             ]);
 
-        var results = await calculator.CalculateAsync(statement, targetYear: 2025);
+        var results = await calculator.CalculateAsync(statement, TaxPeriod.FullYear(2025));
         var sellResult = Assert.Single(results);
 
         Assert.Equal(TradeType.Sell, sellResult.Type);
@@ -166,7 +166,7 @@ public class CapitalGainsTaxCalculatorTests
             ]);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => calculator.CalculateAsync(statement, targetYear: 2025));
+            () => calculator.CalculateAsync(statement, TaxPeriod.FullYear(2025)));
 
         Assert.Contains("carried into 2025", ex.Message);
         Assert.Contains("prior-year CSVs", ex.Message);

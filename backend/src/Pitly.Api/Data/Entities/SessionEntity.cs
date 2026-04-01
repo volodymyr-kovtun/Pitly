@@ -5,6 +5,7 @@ public class SessionEntity
     public Guid Id { get; set; }
     public DateTime CreatedAt { get; set; }
     public int Year { get; set; }
+    public DateTime? TaxableFrom { get; set; }
     public decimal TotalProceedsPln { get; set; }
     public decimal TotalCostPln { get; set; }
     public decimal CapitalGainPln { get; set; }

@@ -36,6 +36,7 @@ export default function ImportPage({ onComplete }: { onComplete: (data: AppState
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [residencyStartDate, setResidencyStartDate] = useState('');
 
   const [dragOver, setDragOver] = useState(false);
 
@@ -63,7 +64,7 @@ export default function ImportPage({ onComplete }: { onComplete: (data: AppState
     const timer2 = setTimeout(() => setStep('calculating'), 1200);
 
     try {
-      const result = await importFiles(allFiles);
+      const result = await importFiles(allFiles, residencyStartDate || undefined);
       clearTimeout(timer1);
       clearTimeout(timer2);
       setPendingFiles([]);
@@ -83,7 +84,7 @@ export default function ImportPage({ onComplete }: { onComplete: (data: AppState
       setStep('error');
       setError(err instanceof Error ? err.message : 'Import failed');
     }
-  }, [onComplete, pendingFiles]);
+  }, [onComplete, pendingFiles, residencyStartDate]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -108,6 +109,22 @@ export default function ImportPage({ onComplete }: { onComplete: (data: AppState
 
       {!isProcessing ? (
         <>
+          <div className="mb-6 bg-slate-800 border border-slate-700 rounded-xl p-5">
+            <label className="block">
+              <span className="text-slate-200 font-medium">Polish tax residency start date</span>
+              <span className="block text-slate-500 text-sm mt-1">
+                Optional. Leave empty for a full-year calculation. If set, Pitly will report only dividends and sells
+                on or after this date, while still using earlier uploaded history to reconstruct FIFO lots.
+              </span>
+              <input
+                type="date"
+                value={residencyStartDate}
+                onChange={(e) => setResidencyStartDate(e.target.value)}
+                className="mt-3 w-full md:w-auto bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
+              />
+            </label>
+          </div>
+
           <label
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -142,16 +159,18 @@ export default function ImportPage({ onComplete }: { onComplete: (data: AppState
             <HelpSection title="How to export from Interactive Brokers">
               <p>1. Log in to IB Client Portal</p>
               <p>2. Go to <strong className="text-slate-300">Reports &rarr; Statements &rarr; Activity</strong></p>
-              <p>3. Select period (full year), format: <strong className="text-slate-300">CSV</strong></p>
-              <p>4. If you sold shares bought in earlier years, upload those earlier yearly CSVs together.</p>
-              <p>5. If the statement includes stock splits, keep the related earlier years in the same upload.</p>
+              <p>3. Select the full tax year, format: <strong className="text-slate-300">CSV</strong></p>
+              <p>4. Even with a mid-year residency start date, still export the full calendar year so FIFO stays correct.</p>
+              <p>5. If you sold shares bought in earlier years, upload those earlier yearly CSVs together.</p>
+              <p>6. If the statement includes stock splits, keep the related earlier years in the same upload.</p>
             </HelpSection>
             <HelpSection title="How to export from Trading 212">
               <p>1. Log in to Trading 212</p>
               <p>2. Go to <strong className="text-slate-300">History</strong> (clock icon)</p>
               <p>3. Click the <strong className="text-slate-300">Download</strong> icon</p>
-              <p>4. Select date range (full tax year) and export as CSV</p>
-              <p>5. Upload one or more yearly CSVs together if you need prior-year FIFO history</p>
+              <p>4. Select the full tax year and export as CSV</p>
+              <p>5. Even with a mid-year residency start date, still export the full calendar year so FIFO stays correct.</p>
+              <p>6. Upload one or more yearly CSVs together if you need prior-year FIFO history</p>
             </HelpSection>
           </div>
         </>
