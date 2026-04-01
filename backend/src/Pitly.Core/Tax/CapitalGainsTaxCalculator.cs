@@ -57,7 +57,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
 
                 var totalCostPln = trade.Quantity * costPerSharePln + commissionPln;
 
-                if (taxPeriod.IncludesTrade(trade.DateTime))
+                if (taxPeriod.IncludesDate(trade.DateTime))
                 {
                     results.Add(new TradeResult(
                         Symbol: trade.Symbol,
@@ -113,7 +113,7 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
 
                 var gainLoss = netProceedsPln - totalCostPln;
 
-                if (taxPeriod.IncludesTrade(trade.DateTime))
+                if (taxPeriod.IncludesDate(trade.DateTime))
                 {
                     results.Add(new TradeResult(
                         Symbol: trade.Symbol,

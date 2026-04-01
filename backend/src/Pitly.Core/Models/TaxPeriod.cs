@@ -22,9 +22,6 @@ public sealed record TaxPeriod
     public static TaxPeriod FullYear(int year)
         => new(year, new DateTime(year, 1, 1), new DateTime(year, 12, 31));
 
-    public bool IncludesTrade(DateTime dateTime)
-        => IncludesDate(dateTime.Date);
-
     public bool IncludesDate(DateTime date)
     {
         var day = date.Date;

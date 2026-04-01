@@ -10,13 +10,7 @@ function buildImportForm(files: File[], residencyStartDate?: string): FormData {
 }
 
 export async function importFile(file: File, residencyStartDate?: string): Promise<ImportResponse> {
-  const form = buildImportForm([file], residencyStartDate);
-  const res = await fetch(`${BASE}/import`, { method: 'POST', body: form });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Import failed' }));
-    throw new Error(err.error || 'Import failed');
-  }
-  return res.json();
+  return importFiles([file], residencyStartDate);
 }
 
 export async function importFiles(files: File[], residencyStartDate?: string): Promise<ImportResponse> {
