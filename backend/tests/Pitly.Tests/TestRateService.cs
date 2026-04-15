@@ -13,9 +13,14 @@ internal sealed class TestRateService : INbpExchangeRateService
 
     public Task<decimal> GetRateAsync(string currency, DateTime transactionDate)
     {
+        var datedKey = $"{currency}@{transactionDate:yyyy-MM-dd}";
+        if (_rates.TryGetValue(datedKey, out var datedRate))
+            return Task.FromResult(datedRate);
+
         if (_rates.TryGetValue(currency, out var rate))
             return Task.FromResult(rate);
 
-        throw new InvalidOperationException($"Missing test exchange rate for {currency}.");
+        throw new InvalidOperationException(
+            $"Missing test exchange rate for {currency} on {transactionDate:yyyy-MM-dd}.");
     }
 }

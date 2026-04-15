@@ -171,4 +171,54 @@ public class CapitalGainsTaxCalculatorTests
         Assert.Contains("carried into 2025", ex.Message);
         Assert.Contains("prior-year CSVs", ex.Message);
     }
+
+    [Fact]
+    public async Task CalculateAsync_UsesHistoricalBuyRateForFifoCosts()
+    {
+        var rateService = new TestRateService(new Dictionary<string, decimal>
+        {
+            ["USD@2023-02-03"] = 4.2803m,
+            ["USD@2024-03-04"] = 3.9922m
+        });
+        var calculator = new CapitalGainsTaxCalculator(rateService);
+
+        var trades = new List<Trade>
+        {
+            new(
+                Symbol: "AMZN",
+                Currency: "USD",
+                DateTime: new DateTime(2023, 2, 3, 10, 0, 0),
+                Quantity: 1m,
+                Price: 107.67m,
+                Proceeds: 107.67m,
+                Commission: 0m,
+                CommissionCurrency: "USD",
+                RealizedPnL: 0m,
+                Type: TradeType.Buy,
+                Isin: "US0231351067"),
+            new(
+                Symbol: "AMZN",
+                Currency: "USD",
+                DateTime: new DateTime(2024, 3, 4, 10, 0, 0),
+                Quantity: 1m,
+                Price: 174.74m,
+                Proceeds: 174.74m,
+                Commission: 0m,
+                CommissionCurrency: "USD",
+                RealizedPnL: 0m,
+                Type: TradeType.Sell,
+                Isin: "US0231351067")
+        };
+
+        var results = await calculator.CalculateAsync(
+            new ParsedStatement(trades, [], []),
+            TaxPeriod.FullYear(2024));
+        var sellResult = Assert.Single(results);
+
+        Assert.Equal(TradeType.Sell, sellResult.Type);
+        Assert.Equal(3.9922m, sellResult.ExchangeRate);
+        Assert.Equal(697.597028m, sellResult.ProceedsPln);
+        Assert.Equal(460.859901m, sellResult.CostPln);
+        Assert.Equal(236.737127m, sellResult.GainLossPln);
+    }
 }

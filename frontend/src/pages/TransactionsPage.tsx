@@ -72,6 +72,9 @@ export default function TransactionsPage({ state }: { state: AppState }) {
         <p className="text-slate-400 text-sm mt-1">
           Showing reportable trades for {formatTaxPeriod(state.summary.taxableFrom, state.summary.taxableTo)}.
         </p>
+        <p className="text-slate-500 text-sm mt-1">
+          Sell-side <span className="font-medium text-slate-400">Cost (PLN)</span> is reconstructed from matched FIFO buy lots using their original NBP rates. The rate shown in each row is the row trade&apos;s own NBP rate.
+        </p>
         {customTaxPeriod && (
           <p className="text-slate-500 text-sm mt-1">
             Earlier uploaded history may still affect FIFO cost basis even when those rows are not shown here.
@@ -117,7 +120,7 @@ export default function TransactionsPage({ state }: { state: AppState }) {
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Qty</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Price (USD)</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Proceeds (USD)</th>
-                <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Rate</th>
+                <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Trade Rate</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Proceeds (PLN)</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Cost (PLN)</th>
                 {sortHeader("Gain/Loss (PLN)", "gainLossPln")}
