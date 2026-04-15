@@ -121,7 +121,7 @@ A sample IB statement is provided at [`samples/sample-activity-statement.csv`](s
 
 ## How it works
 
-- **NBP exchange rates** — for each transaction, the app fetches the official mid rate from the last business day before the transaction date (per Polish tax law). Rates are cached in memory.
+- **NBP exchange rates** — for each transaction, the app currently fetches the official mid rate from the last business day before the **trade** date. Rates are cached in memory.
 - **Capital gains (FIFO)** — buy lots are queued per symbol. On sell, lots are dequeued first-in-first-out to compute cost basis in PLN. Net gains are taxed at 19%.
 - **Dividend tax** — Polish 19% tax minus foreign withholding credit (typically 15% under the PL-US treaty), resulting in ~4% net tax owed.
 
@@ -146,6 +146,7 @@ A sample IB statement is provided at [`samples/sample-activity-statement.csv`](s
 
 - Only **Stocks** trades — forex, options, futures, bonds, and crypto are not supported
 - Only **USD** and **EUR** currencies
+- Capital gains are currently calculated using the **trade date**, not the **settlement date**. This is a commonly used and generally safe practical approach for most same-year retail cases, but some stricter interpretations use settlement date instead, especially around year-end and exchange-holiday edge cases. See: [Investor.gov — New T+1 settlement cycle](https://www.investor.gov/newT1settlement-cycle)
 - If you sell a position opened in earlier years, upload those earlier yearly statements too so FIFO cost basis can be reconstructed correctly
 - Loss carryforward from previous years must be applied manually
 - Does not submit PIT-38 electronically — you enter the values yourself
