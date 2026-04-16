@@ -11,7 +11,7 @@ function roundToFullPln(value: number): number {
 }
 
 // Art. 63 § 1a Ordynacji podatkowej — lump-sum tax under art. 30a ust. 1 pkt 1-3
-// is rounded to full groszy upward (footnote 5 on PIT-38(17) form).
+// is rounded to full groszy upward (footnote 8 on PIT-38(18) form).
 function roundToGroszUp(value: number): number {
   return Math.ceil(value * 100) / 100;
 }
@@ -40,13 +40,13 @@ function buildPit38(s: TaxSummary): Pit38Fields {
     poz25RazemKoszty: koszty,
     poz26Dochod: Math.round(dochod * 100) / 100,
     poz27Strata: Math.round(strata * 100) / 100,
-    poz29PodstawaObliczenia: podstawa,
-    poz31Podatek: podatek,
-    poz33PodatekNalezny: podatekNalezny,
-    poz45ZryczaltowanyPodatek: zryczaltowanyPodatek,
-    poz46PodatekZaplaconyZaGranica: podatekZaGranica,
-    poz47Roznica: roznica,
-    poz49PodatekDoZaplaty: podatekDoZaplaty,
+    Poz31PodstawaObliczenia: podstawa,
+    Poz33Podatek: podatek,
+    Poz35PodatekNalezny: podatekNalezny,
+    Poz47ZryczaltowanyPodatek: zryczaltowanyPodatek,
+    Poz48PodatekZaplaconyZaGranica: podatekZaGranica,
+    Poz49Roznica: roznica,
+    Poz51PodatekDoZaplaty: podatekDoZaplaty,
     totalDividendsPln: s.totalDividendsPln,
   };
 }
@@ -66,7 +66,7 @@ export default function Pit38Page({ state }: { state: AppState }) {
         <div>
           <h1 className="text-white text-2xl font-bold">Your PIT-38 Declaration for {year}</h1>
           <p className="text-slate-400 mt-1">
-            Field numbers (poz.) match the official PIT-38(17) form.
+            Field numbers (poz.) match the official PIT-38(18) form.
           </p>
           <p className="text-slate-500 text-sm mt-1">
             Taxable period: {formatTaxPeriod(state.summary.taxableFrom, state.summary.taxableTo)}
@@ -145,9 +145,9 @@ export default function Pit38Page({ state }: { state: AppState }) {
 
       <Section title="D. Obliczenie zobowiazania podatkowego — art. 30b ust. 1 ustawy">
         <FieldTable rows={[
-          { poz: '29', name: 'Podstawa obliczenia podatku', value: pit38.poz29PodstawaObliczenia, note: 'Poz. 26 minus straty z lat ubieglych, zaokraglone do pelnych zl' },
-          { poz: '31', name: 'Podatek (poz. 29 \u00d7 19%)', value: pit38.poz31Podatek },
-          { poz: '33', name: 'Podatek nalezny', value: pit38.poz33PodatekNalezny, note: 'Po zaokragleniu do pelnych zl' },
+          { poz: '31', name: 'Podstawa obliczenia podatku', value: pit38.Poz31PodstawaObliczenia, note: 'Poz. 26 minus straty z lat ubieglych, zaokraglone do pelnych zl' },
+          { poz: '33', name: 'Podatek (poz. 31 \u00d7 19%)', value: pit38.Poz33Podatek },
+          { poz: '35', name: 'Podatek nalezny', value: pit38.Poz35PodatekNalezny, note: 'Po zaokragleniu do pelnych zl' },
         ]} />
       </Section>
 
@@ -158,18 +158,18 @@ export default function Pit38Page({ state }: { state: AppState }) {
           <span className="text-slate-600 text-xs ml-2">(informational — not entered on PIT-38)</span>
         </div>
         <FieldTable rows={[
-          { poz: '45', name: 'Zryczaltowany podatek 19% od dywidend zagranicznych', value: pit38.poz45ZryczaltowanyPodatek },
-          { poz: '46', name: 'Podatek zaplacony za granica (US withholding)', value: pit38.poz46PodatekZaplaconyZaGranica, note: 'Nie moze przekroczyc kwoty z poz. 45' },
-          { poz: '47', name: 'Roznica (poz. 45 \u2212 poz. 46)', value: pit38.poz47Roznica, note: 'Zaokraglone do pelnych groszy w gore (art. 63 § 1a O.p.)' },
+          { poz: '47', name: 'Zryczaltowany podatek 19% od dywidend zagranicznych', value: pit38.Poz47ZryczaltowanyPodatek },
+          { poz: '48', name: 'Podatek zaplacony za granica (US withholding)', value: pit38.Poz48PodatekZaplaconyZaGranica, note: 'Nie moze przekroczyc kwoty z poz. 47' },
+          { poz: '49', name: 'Roznica (poz. 47 \u2212 poz. 48)', value: pit38.Poz49Roznica, note: 'Zaokraglone do pelnych groszy w gore (art. 63 § 1a O.p.)' },
         ]} />
       </Section>
 
       <div className="bg-blue-500/10 border-2 border-blue-500 rounded-xl p-8 text-center">
         <FileText className="w-10 h-10 text-blue-400 mx-auto mb-3" />
-        <p className="text-slate-500 text-xs font-mono mb-1">Poz. 49</p>
+        <p className="text-slate-500 text-xs font-mono mb-1">Poz. 51</p>
         <p className="text-blue-300 text-sm mb-1">PODATEK DO ZAPLATY</p>
-        <p className="text-white text-3xl font-bold font-mono tabular-nums">{formatPln(pit38.poz49PodatekDoZaplaty)}</p>
-        <p className="text-slate-400 text-xs mt-1">= poz. 33 + poz. 47</p>
+        <p className="text-white text-3xl font-bold font-mono tabular-nums">{formatPln(pit38.Poz51PodatekDoZaplaty)}</p>
+        <p className="text-slate-400 text-xs mt-1">= poz. 35 + poz. 49</p>
         <p className="text-slate-400 text-sm mt-2">Deadline: April 30, {year + 1}</p>
       </div>
 
@@ -250,7 +250,7 @@ function EpityGuide({ pit38, year, hasDividends }: { pit38: Pit38Fields; year: n
           <GuideStep n={1} title="Sposob opodatkowania">
             <p>
               Go to <span className="text-blue-400">e-pity.pl</span> &rarr; <strong className="text-white">Kreator
-              PIT</strong> (in the left sidebar). You can also go directly to the Kreator
+                PIT</strong> (in the left sidebar). You can also go directly to the Kreator
               at <span className="text-blue-400">e-pity.pl/pit-online/kreator-{year}/</span>.
             </p>
             <ul className="list-disc list-inside space-y-1 mt-2">
@@ -344,7 +344,7 @@ function EpityGuide({ pit38, year, hasDividends }: { pit38: Pit38Fields; year: n
                 </p>
                 {hasDividends ? (
                   <p>
-                    Enter <Val v={pit38.poz45ZryczaltowanyPodatek} /> (poz. 45)
+                    Enter <Val v={pit38.Poz47ZryczaltowanyPodatek} /> (poz. 47)
                     <span className="block text-slate-500 text-xs">
                       This is 19% of your total gross dividends in PLN ({formatPln(pit38.totalDividendsPln)})
                     </span>
@@ -360,9 +360,9 @@ function EpityGuide({ pit38, year, hasDividends }: { pit38: Pit38Fields; year: n
                 </p>
                 {hasDividends ? (
                   <p>
-                    Enter <Val v={pit38.poz46PodatekZaplaconyZaGranica} /> (poz. 46)
+                    Enter <Val v={pit38.Poz48PodatekZaplaconyZaGranica} /> (poz. 48)
                     <span className="block text-slate-500 text-xs">
-                      US withholding tax already deducted by your broker, converted to PLN. Cannot exceed poz. 45.
+                      US withholding tax already deducted by your broker, converted to PLN. Cannot exceed poz. 47.
                     </span>
                   </p>
                 ) : (
@@ -395,7 +395,7 @@ function EpityGuide({ pit38, year, hasDividends }: { pit38: Pit38Fields; year: n
             <p>The summary screen shows your calculated tax:</p>
             <ul className="list-disc list-inside space-y-1 mt-2">
               <li>Kwota dochodu: {hasCapitalGains ? formatPln(pit38.poz26Dochod) : '0,00 zl'}</li>
-              <li>Kwota do zaplaty: <Val v={pit38.poz49PodatekDoZaplaty} /></li>
+              <li>Kwota do zaplaty: <Val v={pit38.Poz51PodatekDoZaplaty} /></li>
             </ul>
             <p className="mt-3">From here you can:</p>
             <ul className="list-disc list-inside space-y-2 mt-1">
@@ -411,7 +411,7 @@ function EpityGuide({ pit38, year, hasDividends }: { pit38: Pit38Fields; year: n
                 After submission, save the <strong className="text-white">UPO</strong> (Urzedowe
                 Poswiadczenie Odbioru) — your official receipt
               </li>
-              {pit38.poz49PodatekDoZaplaty > 0 && (
+              {pit38.Poz51PodatekDoZaplaty > 0 && (
                 <li>
                   Click <strong className="text-white">&quot;ZAPLAC PODATEK ONLINE&quot;</strong> or
                   &quot;DRUK PRZELEWU&quot; to pay
@@ -420,8 +420,8 @@ function EpityGuide({ pit38, year, hasDividends }: { pit38: Pit38Fields; year: n
             </ul>
             <p className="mt-2">
               Deadline: <strong className="text-white">April 30, {year + 1}</strong>.
-              {pit38.poz49PodatekDoZaplaty > 0 && (
-                <span> Tax of <Val v={pit38.poz49PodatekDoZaplaty} /> must be paid by the same date.</span>
+              {pit38.Poz51PodatekDoZaplaty > 0 && (
+                <span> Tax of <Val v={pit38.Poz51PodatekDoZaplaty} /> must be paid by the same date.</span>
               )}
             </p>
           </GuideStep>

@@ -1,7 +1,7 @@
 namespace Pitly.Core.Models;
 
 /// <summary>
-/// Maps calculated tax values to actual PIT-38(17) form field positions (poz.).
+/// Maps calculated tax values to actual PIT-38(18) form field positions (poz.).
 /// Field numbers match the official form published by the Polish Ministry of Finance.
 /// </summary>
 public record Pit38Fields(
@@ -21,22 +21,22 @@ public record Pit38Fields(
     decimal Poz27Strata,
 
     // ── Section D: Obliczenie zobowiązania podatkowego — art. 30b ust. 1 ustawy ──
-    // Poz. 29: Podstawa obliczenia podatku (rounded to full PLN per art. 63 § 1 O.p.)
-    decimal Poz29PodstawaObliczenia,
-    // Poz. 31: Podatek = poz. 29 × 19%
-    decimal Poz31Podatek,
-    // Poz. 33: Podatek należny (rounded to full PLN)
-    decimal Poz33PodatekNalezny,
+    // Poz. 31: Podstawa obliczenia podatku (rounded to full PLN per art. 63 § 1 O.p.)
+    decimal Poz31PodstawaObliczenia,
+    // Poz. 33: Podatek = poz. 31 × 19%
+    decimal Poz33Podatek,
+    // Poz. 35: Podatek należny (rounded to full PLN)
+    decimal Poz35PodatekNalezny,
 
     // ── Section G: Podatek do zapłaty / Nadpłata ──
-    // Poz. 45: Zryczałtowany podatek 19% od dywidend zagranicznych (art. 30a ust. 1 pkt 1-5)
-    decimal Poz45ZryczaltowanyPodatek,
-    // Poz. 46: Podatek zapłacony za granicą (capped at poz. 45, per art. 30a ust. 9)
-    decimal Poz46PodatekZaplaconyZaGranica,
-    // Poz. 47: Różnica = poz. 45 − poz. 46 (rounded per art. 63 § 1a O.p. — see footnote 5 on PIT-38(17))
-    decimal Poz47Roznica,
-    // Poz. 49: PODATEK DO ZAPŁATY = poz. 33 + poz. 47
-    decimal Poz49PodatekDoZaplaty,
+    // Poz. 47: Zryczałtowany podatek 19% od dywidend zagranicznych (art. 30a ust. 1 pkt 1-5)
+    decimal Poz47ZryczaltowanyPodatek,
+    // Poz. 48: Podatek zapłacony za granicą (capped at poz. 47, per art. 30a ust. 9)
+    decimal Poz48PodatekZaplaconyZaGranica,
+    // Poz. 49: Różnica = poz. 47 − poz. 48 (rounded per art. 63 § 1a O.p. — see footnote 8 on PIT-38(18))
+    decimal Poz49Roznica,
+    // Poz. 51: PODATEK DO ZAPŁATY = poz. 35 + poz. 49
+    decimal Poz51PodatekDoZaplaty,
 
     // ── Informational (not a PIT-38 field — shown for user reference) ──
     decimal TotalDividendsPln)
@@ -56,8 +56,8 @@ public record Pit38Fields(
         var podatekNalezny = RoundToFullPln(podatek);
 
         // Section G — Dividends
-        // Poz. 45/47 fall under art. 30a ust. 1 — per art. 63 § 1a Ordynacji podatkowej
-        // (footnote 5 on PIT-38(17)), amounts are rounded to full groszy upward, not full PLN.
+        // Poz. 47/49 fall under art. 30a ust. 1 — per art. 63 § 1a Ordynacji podatkowej
+        // (footnote 8 on PIT-38(18)), amounts are rounded to full groszy upward, not full PLN.
         var zryczaltowanyPodatek = RoundToGroszUp(summary.TotalDividendsPln * TaxConstants.TaxRate);
         var podatekZaGranica = Math.Round(Math.Min(summary.TotalWithholdingPln, zryczaltowanyPodatek), 2);
         var roznica = RoundToGroszUp(Math.Max(zryczaltowanyPodatek - podatekZaGranica, 0));
@@ -72,13 +72,13 @@ public record Pit38Fields(
             Poz25RazemKoszty: koszty,
             Poz26Dochod: dochod,
             Poz27Strata: strata,
-            Poz29PodstawaObliczenia: podstawa,
-            Poz31Podatek: podatek,
-            Poz33PodatekNalezny: podatekNalezny,
-            Poz45ZryczaltowanyPodatek: zryczaltowanyPodatek,
-            Poz46PodatekZaplaconyZaGranica: podatekZaGranica,
-            Poz47Roznica: roznica,
-            Poz49PodatekDoZaplaty: podatekDoZaplaty,
+            Poz31PodstawaObliczenia: podstawa,
+            Poz33Podatek: podatek,
+            Poz35PodatekNalezny: podatekNalezny,
+            Poz47ZryczaltowanyPodatek: zryczaltowanyPodatek,
+            Poz48PodatekZaplaconyZaGranica: podatekZaGranica,
+            Poz49Roznica: roznica,
+            Poz51PodatekDoZaplaty: podatekDoZaplaty,
             TotalDividendsPln: summary.TotalDividendsPln);
     }
 
@@ -92,7 +92,7 @@ public record Pit38Fields(
     /// <summary>
     /// Rounds to full groszy upward per art. 63 § 1a Ordynacji podatkowej:
     /// for lump-sum tax under art. 30a ust. 1 pkt 1-3, any fractional grosz rounds up.
-    /// Referenced by footnote 5 on PIT-38(17) form for poz. 44 and 47.
+    /// Referenced by footnote 8 on PIT-38(18) form for poz. 46 and 49.
     /// </summary>
     private static decimal RoundToGroszUp(decimal value)
         => Math.Ceiling(value * 100m) / 100m;

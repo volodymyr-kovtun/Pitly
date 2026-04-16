@@ -51,14 +51,14 @@ export interface Pit38Fields {
   poz26Dochod: number;
   poz27Strata: number;
   // Section D
-  poz29PodstawaObliczenia: number;
-  poz31Podatek: number;
-  poz33PodatekNalezny: number;
+  Poz31PodstawaObliczenia: number;
+  Poz33Podatek: number;
+  Poz35PodatekNalezny: number;
   // Section G
-  poz45ZryczaltowanyPodatek: number;
-  poz46PodatekZaplaconyZaGranica: number;
-  poz47Roznica: number;
-  poz49PodatekDoZaplaty: number;
+  Poz47ZryczaltowanyPodatek: number;
+  Poz48PodatekZaplaconyZaGranica: number;
+  Poz49Roznica: number;
+  Poz51PodatekDoZaplaty: number;
   // Informational
   totalDividendsPln: number;
 }
