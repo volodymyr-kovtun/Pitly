@@ -159,7 +159,7 @@ export default function Pit38Page({ state }: { state: AppState }) {
         </div>
         <FieldTable rows={[
           { poz: '47', name: 'Zryczaltowany podatek 19% od dywidend zagranicznych', value: pit38.Poz47ZryczaltowanyPodatek },
-          { poz: '48', name: 'Podatek zaplacony za granica (US withholding)', value: pit38.Poz48PodatekZaplaconyZaGranica, note: 'Nie moze przekroczyc kwoty z poz. 45' },
+          { poz: '48', name: 'Podatek zaplacony za granica (US withholding)', value: pit38.Poz48PodatekZaplaconyZaGranica, note: 'Nie moze przekroczyc kwoty z poz. 47' },
           { poz: '49', name: 'Roznica (poz. 47 \u2212 poz. 48)', value: pit38.Poz49Roznica, note: 'Zaokraglone do pelnych groszy w gore (art. 63 § 1a O.p.)' },
         ]} />
       </Section>

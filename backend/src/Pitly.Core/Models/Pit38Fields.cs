@@ -30,7 +30,7 @@ public record Pit38Fields(
 
     // ── Section G: Podatek do zapłaty / Nadpłata ──
     // Poz. 47: Zryczałtowany podatek 19% od dywidend zagranicznych (art. 30a ust. 1 pkt 1-5)
-    decimal Poz45ZryczaltowanyPodatek,
+    decimal Poz47ZryczaltowanyPodatek,
     // Poz. 48: Podatek zapłacony za granicą (capped at poz. 47, per art. 30a ust. 9)
     decimal Poz48PodatekZaplaconyZaGranica,
     // Poz. 49: Różnica = poz. 47 − poz. 48 (rounded per art. 63 § 1a O.p. — see footnote 8 on PIT-38(18))
@@ -75,7 +75,7 @@ public record Pit38Fields(
             Poz31PodstawaObliczenia: podstawa,
             Poz33Podatek: podatek,
             Poz35PodatekNalezny: podatekNalezny,
-            Poz45ZryczaltowanyPodatek: zryczaltowanyPodatek,
+            Poz47ZryczaltowanyPodatek: zryczaltowanyPodatek,
             Poz48PodatekZaplaconyZaGranica: podatekZaGranica,
             Poz49Roznica: roznica,
             Poz51PodatekDoZaplaty: podatekDoZaplaty,
