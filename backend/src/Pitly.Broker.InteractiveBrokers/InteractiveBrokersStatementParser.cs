@@ -343,6 +343,9 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
     [GeneratedRegex(@"^\s*(?<symbol>\w+)\s*\((?<isin>[^)]+)\)\s+(?:Reverse\s+)?Split\s+(?<num>\d+(?:\.\d+)?)\s+for\s+(?<den>\d+(?:\.\d+)?)\b", RegexOptions.IgnoreCase)]
     private static partial Regex StockSplitRegex();
 
+    [GeneratedRegex(@"\b[A-Z]{2}[A-Z0-9]{10}\b")]
+    private static partial Regex IsinRegex();
+
     private void TryParseStatementYear(List<string> fields, ref int? statementYear)
     {
         if (fields.Count < 4 || Clean(fields[1]) != "Data" || Clean(fields[2]) != "Period")
@@ -413,13 +416,23 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
         if (string.IsNullOrWhiteSpace(isin) && symbolToIsin.TryGetValue(symbol, out var mappedIsin))
             isin = mappedIsin;
 
+        // When a split also renames the ISIN, IB writes both inside the description, e.g.
+        // "BOIL(US74347Y7638) Split 1 for 5 (BOIL, PROSHARES ULTRA, US74347Y7489)" -- the first
+        // ISIN is the pre-split one, the last is the post-split one. Capture the new ISIN so the
+        // calculator can move the rescaled lots to the right bucket.
+        string? targetIsin = null;
+        var allIsins = IsinRegex().Matches(description).Select(m => m.Value).ToList();
+        if (allIsins.Count >= 2 && !string.Equals(allIsins[0], allIsins[^1], StringComparison.OrdinalIgnoreCase))
+            targetIsin = allIsins[^1];
+
         corporateActions.Add(new CorporateAction(
             Symbol: symbol,
             DateTime: dateTime,
             Type: CorporateActionType.StockSplit,
             Numerator: numerator,
             Denominator: denominator,
-            Isin: string.IsNullOrWhiteSpace(isin) ? null : isin));
+            Isin: string.IsNullOrWhiteSpace(isin) ? null : isin,
+            TargetIsin: targetIsin));
     }
 
     private void TryParseCarryInPosition(

@@ -159,8 +159,24 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
             throw new InvalidOperationException(
                 $"Unsupported stock split ratio for {action.Symbol} on {action.DateTime:yyyy-MM-dd}.");
 
-        var lotKey = GetLotKey(action);
-        if (!buyLots.TryGetValue(lotKey, out var lots) || lots.Count == 0)
+        // A split row may name the ISIN before the split (`Isin`) and a different one after it
+        // (`TargetIsin`). Trades may have landed under either ISIN or under the bare symbol — try
+        // each in turn so the rescale finds the lots wherever they live.
+        var sourceKey = GetLotKey(action);
+        var targetKey = string.IsNullOrWhiteSpace(action.TargetIsin) ? sourceKey : action.TargetIsin;
+
+        string? actualKey = null;
+        LinkedList<(decimal Quantity, decimal CostPerSharePln, decimal CommissionPerSharePln)>? lots = null;
+        foreach (var candidate in new[] { sourceKey, targetKey, action.Symbol })
+        {
+            if (string.IsNullOrWhiteSpace(candidate)) continue;
+            if (buyLots.TryGetValue(candidate, out lots) && lots.Count > 0)
+            {
+                actualKey = candidate;
+                break;
+            }
+        }
+        if (actualKey is null || lots is null)
             return;
 
         for (var node = lots.First; node is not null; node = node.Next)
@@ -170,6 +186,23 @@ public class CapitalGainsTaxCalculator : ICapitalGainsTaxCalculator
                 Quantity: lot.Quantity * factor,
                 CostPerSharePln: lot.CostPerSharePln / factor,
                 CommissionPerSharePln: lot.CommissionPerSharePln / factor);
+        }
+
+        if (!string.Equals(actualKey, targetKey, StringComparison.OrdinalIgnoreCase))
+        {
+            // Trades on either side of the rename may resolve their lot key to either ISIN
+            // depending on which "Financial Instrument Information" line the parser saw last.
+            // Expose the same lot list under both keys so a sell finds it regardless.
+            if (buyLots.TryGetValue(targetKey, out var existing) && !ReferenceEquals(existing, lots))
+            {
+                foreach (var lot in lots)
+                    existing.AddLast(lot);
+                buyLots[actualKey] = existing;
+            }
+            else
+            {
+                buyLots[targetKey] = lots;
+            }
         }
     }
 
