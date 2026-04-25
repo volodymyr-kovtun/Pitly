@@ -18,6 +18,7 @@ export interface TradeResult {
 export interface DividendResult {
   id: number;
   symbol: string;
+  isin?: string | null;
   currency: string;
   date: string;
   amountOriginal: number;
