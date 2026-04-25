@@ -68,6 +68,7 @@ public static class ImportEndpoints
                             result.Summary.CapitalGainTaxPln,
                             result.Summary.TotalDividendsPln,
                             result.Summary.TotalWithholdingPln,
+                            result.Summary.TotalCreditableWithholdingPln,
                             result.Summary.DividendTaxOwedPln,
                             result.Summary.Year,
                             result.Summary.TaxableFrom,

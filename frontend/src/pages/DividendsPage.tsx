@@ -21,7 +21,7 @@ export default function DividendsPage({ state }: { state: AppState }) {
       amountPln += d.amountPln;
       withholdingPln += d.withholdingTaxPln;
       plTax += tax;
-      netOwed += Math.max(tax - d.withholdingTaxPln, 0);
+      netOwed += Math.max(tax - d.creditableWithholdingTaxPln, 0);
     }
     return { amountPln, withholdingPln, plTax, netOwed };
   }, [filtered]);
@@ -84,7 +84,7 @@ export default function DividendsPage({ state }: { state: AppState }) {
             <tbody>
               {filtered.map((d, i) => {
                 const plTax = d.amountPln * PL_TAX_RATE;
-                const netOwed = Math.max(plTax - d.withholdingTaxPln, 0);
+                const netOwed = Math.max(plTax - d.creditableWithholdingTaxPln, 0);
                 return (
                   <tr
                     key={i}

@@ -12,6 +12,7 @@ public class SessionEntity
     public decimal CapitalGainTaxPln { get; set; }
     public decimal TotalDividendsPln { get; set; }
     public decimal TotalWithholdingPln { get; set; }
+    public decimal TotalCreditableWithholdingPln { get; set; }
     public decimal DividendTaxOwedPln { get; set; }
 
     public List<TradeResultEntity> TradeResults { get; set; } = [];

@@ -59,7 +59,9 @@ public record Pit38Fields(
         // Poz. 47/49 fall under art. 30a ust. 1 — per art. 63 § 1a Ordynacji podatkowej
         // (footnote 8 on PIT-38(18)), amounts are rounded to full groszy upward, not full PLN.
         var zryczaltowanyPodatek = RoundToGroszUp(summary.TotalDividendsPln * TaxConstants.TaxRate);
-        var podatekZaGranica = Math.Round(Math.Min(summary.TotalWithholdingPln, zryczaltowanyPodatek), 2);
+        // Use the per-dividend creditable withholding (capped to the treaty rate of the source
+        // country, art. 30a ust. 9), not the full amount the foreign broker actually withheld.
+        var podatekZaGranica = Math.Round(Math.Min(summary.TotalCreditableWithholdingPln, zryczaltowanyPodatek), 2);
         var roznica = RoundToGroszUp(Math.Max(zryczaltowanyPodatek - podatekZaGranica, 0));
 
         var podatekDoZaplaty = podatekNalezny + roznica;

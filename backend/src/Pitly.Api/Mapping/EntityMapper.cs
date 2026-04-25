@@ -19,6 +19,7 @@ public static class EntityMapper
             CapitalGainTaxPln = summary.CapitalGainTaxPln,
             TotalDividendsPln = summary.TotalDividendsPln,
             TotalWithholdingPln = summary.TotalWithholdingPln,
+            TotalCreditableWithholdingPln = summary.TotalCreditableWithholdingPln,
             DividendTaxOwedPln = summary.DividendTaxOwedPln,
             TradeResults = summary.TradeResults.Select(t => new TradeResultEntity
             {
@@ -68,6 +69,7 @@ public static class EntityMapper
             session.CapitalGainTaxPln,
             session.TotalDividendsPln,
             session.TotalWithholdingPln,
+            session.TotalCreditableWithholdingPln,
             session.DividendTaxOwedPln,
             session.Year,
             taxPeriod.TaxableFrom,

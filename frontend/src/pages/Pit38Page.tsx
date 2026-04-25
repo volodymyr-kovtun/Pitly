@@ -28,7 +28,9 @@ function buildPit38(s: TaxSummary): Pit38Fields {
   const podatekNalezny = roundToFullPln(podatek);
 
   const zryczaltowanyPodatek = roundToGroszUp(s.totalDividendsPln * TAX_RATE);
-  const podatekZaGranica = Math.round(Math.min(s.totalWithholdingPln, zryczaltowanyPodatek) * 100) / 100;
+  // Use creditable WHT (capped at the treaty rate per art. 30a ust. 9), not the full
+  // amount actually withheld by the broker.
+  const podatekZaGranica = Math.round(Math.min(s.totalCreditableWithholdingPln, zryczaltowanyPodatek) * 100) / 100;
   const roznica = roundToGroszUp(Math.max(zryczaltowanyPodatek - podatekZaGranica, 0));
   const podatekDoZaplaty = podatekNalezny + roznica;
 

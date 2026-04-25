@@ -70,10 +70,16 @@ public static class SessionEndpoints
                 return Results.NotFound(new { error = "Session not found" });
 
             var taxPeriod = EntityMapper.ToTaxPeriod(session);
+            // Sessions stored before #23 don't have a creditable column populated; fall back to
+            // the actual withholding so legacy PIT-38 lookups keep their pre-fix behaviour.
+            var creditable = session.TotalCreditableWithholdingPln > 0
+                ? session.TotalCreditableWithholdingPln
+                : session.TotalWithholdingPln;
             var summary = new TaxSummary(
                 session.TotalProceedsPln, session.TotalCostPln,
                 session.CapitalGainPln, session.CapitalGainTaxPln,
                 session.TotalDividendsPln, session.TotalWithholdingPln,
+                creditable,
                 session.DividendTaxOwedPln, session.Year,
                 taxPeriod.TaxableFrom, taxPeriod.TaxableTo,
                 [], []);

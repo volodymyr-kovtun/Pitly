@@ -24,6 +24,7 @@ export interface DividendResult {
   withholdingTaxOriginal: number;
   amountPln: number;
   withholdingTaxPln: number;
+  creditableWithholdingTaxPln: number;
   exchangeRate: number;
   rateUnavailable: boolean;
 }
@@ -35,6 +36,7 @@ export interface TaxSummary {
   capitalGainTaxPln: number;
   totalDividendsPln: number;
   totalWithholdingPln: number;
+  totalCreditableWithholdingPln: number;
   dividendTaxOwedPln: number;
   year: number;
   taxableFrom: string;

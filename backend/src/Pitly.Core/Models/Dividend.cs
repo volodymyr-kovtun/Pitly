@@ -8,5 +8,6 @@ public record Dividend(
     decimal WithholdingTaxOriginal,
     decimal AmountPln,
     decimal WithholdingTaxPln,
+    decimal CreditableWithholdingTaxPln,
     decimal ExchangeRate,
     bool RateUnavailable = false);
