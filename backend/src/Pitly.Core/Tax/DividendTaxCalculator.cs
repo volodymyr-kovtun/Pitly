@@ -71,7 +71,8 @@ public class DividendTaxCalculator : IDividendTaxCalculator
                 AmountPln: amountPln,
                 WithholdingTaxPln: withholdingPln,
                 CreditableWithholdingTaxPln: creditablePln,
-                ExchangeRate: rate));
+                ExchangeRate: rate,
+                Isin: div.Isin));
         }
 
         return results;

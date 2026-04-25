@@ -46,7 +46,9 @@ public static class EntityMapper
                 WithholdingTaxOriginal = d.WithholdingTaxOriginal,
                 AmountPln = d.AmountPln,
                 WithholdingTaxPln = d.WithholdingTaxPln,
+                CreditableWithholdingTaxPln = d.CreditableWithholdingTaxPln,
                 ExchangeRate = d.ExchangeRate,
+                Isin = d.Isin,
                 RateUnavailable = d.RateUnavailable
             }).ToList()
         };

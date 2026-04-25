@@ -10,4 +10,5 @@ public record Dividend(
     decimal WithholdingTaxPln,
     decimal CreditableWithholdingTaxPln,
     decimal ExchangeRate,
+    string? Isin = null,
     bool RateUnavailable = false);
