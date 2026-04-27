@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Pitly.Core\Pitly.Core.csproj" />
     <ProjectReference Include="..\Pitly.Broker.InteractiveBrokers\Pitly.Broker.InteractiveBrokers.csproj" />
     <ProjectReference Include="..\Pitly.Broker.Trading212\Pitly.Broker.Trading212.csproj" />
+    <ProjectReference Include="..\Pitly.Broker.LGT\Pitly.Broker.LGT.csproj" />
   </ItemGroup>
 
   <ItemGroup>
