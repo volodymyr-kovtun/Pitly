@@ -48,6 +48,27 @@ public class InteractiveBrokersStatementParserTests
     }
 
     [Fact]
+    public void Parse_StockSplitDebitRowIsSkipped()
+    {
+        var csv = """
+                  Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
+                  Trades,Data,Order,Stocks,USD,BOIL,"2024-02-07, 15:00:00",20,10,10,-200,-1,201,0,0,O
+                  Corporate Actions,Header,Asset Category,Currency,Report Date,Date/Time,Description,Quantity,Proceeds,Value,Realized P/L,Code
+                  Corporate Actions,Data,Stocks,USD,2024-11-07,"2024-11-06, 20:25:00","BOIL(US74347Y7489) Split 1 for 5 (BOIL, PROSHARES ULTRA, US74347Y7489)",4,0,0,0,
+                  Corporate Actions,Data,Stocks,USD,2024-11-07,"2024-11-06, 20:25:00","BOIL(US74347Y7638) Split 1 for 5 (BOIL.OLD, PROSHARES ULTRA, US74347Y7638)",-20,0,0,0,
+                  """;
+
+        var parsed = Parser.Parse(csv);
+
+        var split = Assert.Single(parsed.CorporateActions!);
+        Assert.Equal(CorporateActionType.StockSplit, split.Type);
+        Assert.Equal("BOIL", split.Symbol);
+        Assert.Equal(1m, split.Numerator);
+        Assert.Equal(5m, split.Denominator);
+        Assert.Equal("US74347Y7489", split.Isin);
+    }
+
+    [Fact]
     public void Parse_ReversedDividendIsNetted()
     {
         var csv = """

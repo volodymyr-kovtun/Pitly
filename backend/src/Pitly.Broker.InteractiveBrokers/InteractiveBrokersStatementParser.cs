@@ -381,18 +381,18 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
         if (string.IsNullOrWhiteSpace(description) || description.Contains("Total", StringComparison.OrdinalIgnoreCase))
             return;
 
-        // IB emits a split as two rows: a positive-quantity credit of the new shares and a
-        // negative-quantity debit of the old shares (often with the .OLD alias). Both rows match
-        // the split regex, so without skipping the debit we'd apply the split factor twice.
-        if (fields.Count > 7 && TryParseDecimal(Clean(fields[7]), out var quantity) && quantity <= 0)
-            return;
-
         var match = StockSplitRegex().Match(description);
         if (!match.Success)
         {
             unsupportedCorporateActions.Add(description);
             return;
         }
+
+        // IB emits a split as two rows: a positive-quantity credit of the new shares and a
+        // negative-quantity debit of the old shares (often with the .OLD alias). Both rows match
+        // the split regex, so without skipping the debit we'd apply the split factor twice.
+        if (fields.Count > 7 && TryParseDecimal(Clean(fields[7]), out var quantity) && quantity <= 0)
+            return;
 
         var dateTimeStr = Clean(fields[5]);
         if (!TryParseDateTime(dateTimeStr, out var dateTime))
