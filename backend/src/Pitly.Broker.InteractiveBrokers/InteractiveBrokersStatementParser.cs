@@ -388,6 +388,12 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
             return;
         }
 
+        // IB emits a split as two rows: a positive-quantity credit of the new shares and a
+        // negative-quantity debit of the old shares (often with the .OLD alias). Both rows match
+        // the split regex, so without skipping the debit we'd apply the split factor twice.
+        if (fields.Count > 7 && TryParseDecimal(Clean(fields[7]), out var quantity) && quantity <= 0)
+            return;
+
         var dateTimeStr = Clean(fields[5]);
         if (!TryParseDateTime(dateTimeStr, out var dateTime))
         {
