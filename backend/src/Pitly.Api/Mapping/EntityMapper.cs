@@ -19,6 +19,7 @@ public static class EntityMapper
             CapitalGainTaxPln = summary.CapitalGainTaxPln,
             TotalDividendsPln = summary.TotalDividendsPln,
             TotalWithholdingPln = summary.TotalWithholdingPln,
+            TotalCreditableWithholdingPln = summary.TotalCreditableWithholdingPln,
             DividendTaxOwedPln = summary.DividendTaxOwedPln,
             TradeResults = summary.TradeResults.Select(t => new TradeResultEntity
             {
@@ -45,7 +46,9 @@ public static class EntityMapper
                 WithholdingTaxOriginal = d.WithholdingTaxOriginal,
                 AmountPln = d.AmountPln,
                 WithholdingTaxPln = d.WithholdingTaxPln,
+                CreditableWithholdingTaxPln = d.CreditableWithholdingTaxPln,
                 ExchangeRate = d.ExchangeRate,
+                Isin = d.Isin,
                 RateUnavailable = d.RateUnavailable
             }).ToList()
         };
@@ -68,6 +71,7 @@ public static class EntityMapper
             session.CapitalGainTaxPln,
             session.TotalDividendsPln,
             session.TotalWithholdingPln,
+            session.TotalCreditableWithholdingPln,
             session.DividendTaxOwedPln,
             session.Year,
             taxPeriod.TaxableFrom,

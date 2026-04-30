@@ -18,12 +18,14 @@ export interface TradeResult {
 export interface DividendResult {
   id: number;
   symbol: string;
+  isin?: string | null;
   currency: string;
   date: string;
   amountOriginal: number;
   withholdingTaxOriginal: number;
   amountPln: number;
   withholdingTaxPln: number;
+  creditableWithholdingTaxPln: number;
   exchangeRate: number;
   rateUnavailable: boolean;
 }
@@ -35,6 +37,7 @@ export interface TaxSummary {
   capitalGainTaxPln: number;
   totalDividendsPln: number;
   totalWithholdingPln: number;
+  totalCreditableWithholdingPln: number;
   dividendTaxOwedPln: number;
   year: number;
   taxableFrom: string;

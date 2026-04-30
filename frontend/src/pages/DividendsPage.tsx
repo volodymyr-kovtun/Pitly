@@ -21,7 +21,7 @@ export default function DividendsPage({ state }: { state: AppState }) {
       amountPln += d.amountPln;
       withholdingPln += d.withholdingTaxPln;
       plTax += tax;
-      netOwed += Math.max(tax - d.withholdingTaxPln, 0);
+      netOwed += Math.max(tax - d.creditableWithholdingTaxPln, 0);
     }
     return { amountPln, withholdingPln, plTax, netOwed };
   }, [filtered]);
@@ -61,8 +61,8 @@ export default function DividendsPage({ state }: { state: AppState }) {
       <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
         <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
         <div className="text-sm text-blue-300">
-          <p>Polish tax on dividends is 19%. US withholding tax (typically 15% under the PL-US treaty) can be credited against the Polish tax.</p>
-          <p className="mt-1">Net tax owed in Poland = 19% - 15% = <strong>4%</strong> (when US tax rate is exactly 15%).</p>
+          <p>Polish tax on dividends is 19%. Foreign withholding tax can be credited against it, but only up to the rate set by the bilateral tax treaty with the dividend&apos;s source country (art. 30a ust. 9). For US shares the cap is 15% under the PL-US treaty; other countries vary (e.g. PL-DK is also 15%, even though Denmark withholds 27% at source).</p>
+          <p className="mt-1">Net tax owed = max(19% &times; gross dividend &minus; capped foreign tax, 0), summed per dividend.</p>
         </div>
       </div>
 
@@ -76,7 +76,7 @@ export default function DividendsPage({ state }: { state: AppState }) {
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Amount (USD)</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Rate</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Amount (PLN)</th>
-                <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">US Tax (PLN)</th>
+                <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Foreign Tax (PLN)</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">PL Tax 19%</th>
                 <th className="text-slate-400 text-xs uppercase tracking-wider font-medium px-3 py-3 text-right">Net Tax Owed</th>
               </tr>
@@ -84,7 +84,7 @@ export default function DividendsPage({ state }: { state: AppState }) {
             <tbody>
               {filtered.map((d, i) => {
                 const plTax = d.amountPln * PL_TAX_RATE;
-                const netOwed = Math.max(plTax - d.withholdingTaxPln, 0);
+                const netOwed = Math.max(plTax - d.creditableWithholdingTaxPln, 0);
                 return (
                   <tr
                     key={i}

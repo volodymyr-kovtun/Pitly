@@ -55,6 +55,13 @@ public class DividendTaxCalculator : IDividendTaxCalculator
                 withholdingPln += tax.Amount * withholdingRate;
             }
 
+            // Per art. 30a ust. 9 ustawy o PIT, the foreign-tax credit cannot exceed the rate
+            // set in the bilateral tax treaty with the dividend's source country. The source
+            // country comes from the first two letters of the ISIN.
+            var treatyRate = TreatyRates.ForIsin(div.Isin);
+            var treatyCap = amountPln * treatyRate;
+            var creditablePln = Math.Min(withholdingPln, treatyCap);
+
             results.Add(new Dividend(
                 Symbol: div.Symbol,
                 Currency: div.Currency,
@@ -63,7 +70,9 @@ public class DividendTaxCalculator : IDividendTaxCalculator
                 WithholdingTaxOriginal: withholdingAmount,
                 AmountPln: amountPln,
                 WithholdingTaxPln: withholdingPln,
-                ExchangeRate: rate));
+                CreditableWithholdingTaxPln: creditablePln,
+                ExchangeRate: rate,
+                Isin: div.Isin));
         }
 
         return results;

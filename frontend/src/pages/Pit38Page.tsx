@@ -28,7 +28,9 @@ function buildPit38(s: TaxSummary): Pit38Fields {
   const podatekNalezny = roundToFullPln(podatek);
 
   const zryczaltowanyPodatek = roundToGroszUp(s.totalDividendsPln * TAX_RATE);
-  const podatekZaGranica = Math.round(Math.min(s.totalWithholdingPln, zryczaltowanyPodatek) * 100) / 100;
+  // Use creditable WHT (capped at the treaty rate per art. 30a ust. 9), not the full
+  // amount actually withheld by the broker.
+  const podatekZaGranica = Math.round(Math.min(s.totalCreditableWithholdingPln, zryczaltowanyPodatek) * 100) / 100;
   const roznica = roundToGroszUp(Math.max(zryczaltowanyPodatek - podatekZaGranica, 0));
   const podatekDoZaplaty = podatekNalezny + roznica;
 
@@ -159,7 +161,7 @@ export default function Pit38Page({ state }: { state: AppState }) {
         </div>
         <FieldTable rows={[
           { poz: '47', name: 'Zryczaltowany podatek 19% od dywidend zagranicznych', value: pit38.Poz47ZryczaltowanyPodatek },
-          { poz: '48', name: 'Podatek zaplacony za granica (US withholding)', value: pit38.Poz48PodatekZaplaconyZaGranica, note: 'Nie moze przekroczyc kwoty z poz. 47' },
+          { poz: '48', name: 'Podatek zaplacony za granica (foreign withholding)', value: pit38.Poz48PodatekZaplaconyZaGranica, note: 'Capped per dividend at the bilateral treaty rate (art. 30a ust. 9); cannot exceed poz. 47' },
           { poz: '49', name: 'Roznica (poz. 47 \u2212 poz. 48)', value: pit38.Poz49Roznica, note: 'Zaokraglone do pelnych groszy w gore (art. 63 § 1a O.p.)' },
         ]} />
       </Section>
