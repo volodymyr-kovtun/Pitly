@@ -38,8 +38,9 @@ public class TaxCalculator : ITaxCalculator
 
         var totalDividendsPln = dividends.Sum(d => d.AmountPln);
         var totalWithholdingPln = dividends.Sum(d => d.WithholdingTaxPln);
+        var totalCreditableWithholdingPln = dividends.Sum(d => d.CreditableWithholdingTaxPln);
         var polishDividendTax = Math.Round(totalDividendsPln * TaxConstants.TaxRate, 2);
-        var withholdingCredit = Math.Min(totalWithholdingPln, polishDividendTax);
+        var withholdingCredit = Math.Min(totalCreditableWithholdingPln, polishDividendTax);
         var dividendTaxOwed = Math.Max(polishDividendTax - withholdingCredit, 0);
 
         return new TaxSummary(
@@ -49,6 +50,7 @@ public class TaxCalculator : ITaxCalculator
             CapitalGainTaxPln: capitalGainTax,
             TotalDividendsPln: Math.Round(totalDividendsPln, 2),
             TotalWithholdingPln: Math.Round(totalWithholdingPln, 2),
+            TotalCreditableWithholdingPln: Math.Round(totalCreditableWithholdingPln, 2),
             DividendTaxOwedPln: Math.Round(dividendTaxOwed, 2),
             Year: taxPeriod.Year,
             TaxableFrom: taxPeriod.TaxableFrom,

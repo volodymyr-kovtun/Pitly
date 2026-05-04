@@ -11,6 +11,8 @@ public class DividendEntity
     public decimal WithholdingTaxOriginal { get; set; }
     public decimal AmountPln { get; set; }
     public decimal WithholdingTaxPln { get; set; }
+    public decimal CreditableWithholdingTaxPln { get; set; }
     public decimal ExchangeRate { get; set; }
+    public string? Isin { get; set; }
     public bool RateUnavailable { get; set; }
 }

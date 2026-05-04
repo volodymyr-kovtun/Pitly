@@ -7,6 +7,7 @@ public record TaxSummary(
     decimal CapitalGainTaxPln,
     decimal TotalDividendsPln,
     decimal TotalWithholdingPln,
+    decimal TotalCreditableWithholdingPln,
     decimal DividendTaxOwedPln,
     int Year,
     DateTime TaxableFrom,
