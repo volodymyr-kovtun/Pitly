@@ -22,7 +22,8 @@ public record CorporateAction(
     CorporateActionType Type,
     decimal Numerator,
     decimal Denominator,
-    string? Isin = null)
+    string? Isin = null,
+    string? TargetIsin = null)
 {
     public decimal Factor => Denominator == 0 ? 0 : Numerator / Denominator;
 }
