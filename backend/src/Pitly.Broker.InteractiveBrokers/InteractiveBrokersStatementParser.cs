@@ -362,10 +362,16 @@ public partial class InteractiveBrokersStatementParser : IStatementParser
         if (fields.Count < 7 || Clean(fields[1]) != "Data" || Clean(fields[2]) != "Stocks")
             return;
 
-        var symbol = Clean(fields[3]);
+        var symbolField = Clean(fields[3]);
         var isin = Clean(fields[6]);
-        if (!string.IsNullOrWhiteSpace(symbol) && !string.IsNullOrWhiteSpace(isin))
-            symbolToIsin[symbol] = isin;
+        if (string.IsNullOrWhiteSpace(symbolField) || string.IsNullOrWhiteSpace(isin))
+            return;
+
+        // IB lists every alias the instrument has held in this period in one comma-separated cell
+        // (e.g. "FRC, FRCB" or "BOIL.OLD, BOIL" after a ticker change). Register each alias so the
+        // ISIN attaches to trades regardless of which name they reference.
+        foreach (var part in symbolField.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            symbolToIsin[part] = isin;
     }
 
     private void TryParseCorporateAction(

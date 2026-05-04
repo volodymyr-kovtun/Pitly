@@ -48,6 +48,24 @@ public class InteractiveBrokersStatementParserTests
     }
 
     [Fact]
+    public void Parse_RegistersIsinUnderEveryTickerAlias()
+    {
+        var csv = """
+                  Statement,Data,Period,"January 1, 2025 - December 31, 2025"
+                  Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
+                  Trades,Data,Order,Stocks,USD,frc,"2025-03-13, 12:00:00",4,16,16,-64,-1,65,0,0,O
+                  Trades,Data,Order,Stocks,USD,FRCB,"2025-11-24, 09:00:00",-4,0.001,0.001,0.004,-0.01,-65,-65.006,0,C
+                  Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Listing Exch,Multiplier,Type,Code
+                  Financial Instrument Information,Data,Stocks,"FRC, FRCB",FIRST REPUBLIC BANK,81731135,US33616C1009,PINK,1,COMMON,
+                  """;
+
+        var parsed = Parser.Parse(csv);
+
+        Assert.Equal(2, parsed.Trades.Count);
+        Assert.All(parsed.Trades, t => Assert.Equal("US33616C1009", t.Isin));
+    }
+
+    [Fact]
     public void Parse_StockSplitDebitRowIsSkipped()
     {
         var csv = """
