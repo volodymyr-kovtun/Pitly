@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pitly.Broker.Trading212\Pitly.Broker.Trading212.csproj" />
     <ProjectReference Include="..\..\src\Pitly.Broker.InteractiveBrokers\Pitly.Broker.InteractiveBrokers.csproj" />
+    <ProjectReference Include="..\..\src\Pitly.Broker.LGT\Pitly.Broker.LGT.csproj" />
     <ProjectReference Include="..\..\src\Pitly.Core\Pitly.Core.csproj" />
   </ItemGroup>
 
